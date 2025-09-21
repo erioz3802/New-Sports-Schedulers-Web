@@ -1,19 +1,26 @@
-# app.py - Main Flask Application - Phase 6 Ready (CLEAN VERSION)
+# app.py - Sports Schedulers - Production Ready
+# JES Baseball LLC - 2025
+
 from flask import Flask, render_template, redirect, url_for, flash, request, jsonify
 from flask_login import LoginManager, login_required, current_user
 from datetime import datetime
-from dotenv import load_dotenv
-load_dotenv()
-
-
-# ADD THIS SECTION HERE:
 import os
 
-# Google Maps API Configuration
-GOOGLE_MAPS_API_KEY = 'AIzaSyBG6YHNSe5JjnDW7mnPa32v1OFU4liwddE'
+# Load environment variables
+if os.environ.get('RENDER'):
+    # Production - Render sets environment variables automatically
+    pass
+else:
+    # Development - load from .env file
+    from dotenv import load_dotenv
+    load_dotenv()
+
+# Initialize Flask app
+app = Flask(__name__)
 
 # Production-ready configuration
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'sports-scheduler-secret-key-change-in-production')
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # Database configuration for both development and production
 database_url = os.environ.get('DATABASE_URL')
@@ -25,6 +32,9 @@ if database_url:
 else:
     # Development database (SQLite)
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///sports_scheduler.db'
+
+# Google Maps API Configuration
+GOOGLE_MAPS_API_KEY = 'AIzaSyBG6YHNSe5JjnDW7mnPa32v1OFU4liwddE'
 
 # Initialize database and Flask-Login
 from models.database import db, User, create_demo_users
@@ -60,20 +70,21 @@ def index():
     dashboard_data = {}
     
     if current_user.can_manage_users:
-        # Import Location model
-        from models.league import Location
+        try:
+            from models.league import Location
+            location_count = Location.query.count()
+        except:
+            location_count = 0
         
-        # Admin dashboard data
         dashboard_data.update({
             'total_users': 4,  # Demo count
             'total_leagues': 3,  # Demo count
-            'total_locations': Location.query.count(),  # Real location count
+            'total_locations': location_count,
             'total_games': 8,  # Demo count
-            'recent_games': []  # Placeholder for recent games
+            'recent_games': []
         })
     
     if current_user.role in ['assigner', 'administrator', 'superadmin']:
-        # Game management data
         dashboard_data.update({
             'draft_games': 2,
             'ready_games': 1,
@@ -82,7 +93,6 @@ def index():
         })
     
     if current_user.role == 'official':
-        # Official-specific dashboard data
         dashboard_data.update({
             'upcoming_assignments': 2,
             'total_earnings_ytd': 450.00,
@@ -92,7 +102,7 @@ def index():
     return render_template('dashboard.html', 
                          title=f'{current_user.role.title()} Dashboard',
                          user=current_user,
-                         **dashboard_data)  # This spreads all the dashboard_data into the template
+                         **dashboard_data)
 
 @app.route('/dashboard')
 @login_required
@@ -117,28 +127,15 @@ def chatbot_api():
     try:
         message = request.json.get('message', '') if request.json else ''
         
-        # Enhanced chatbot responses for Phase 6
+        # Enhanced chatbot responses
         responses = {
-            'hello': 'Hi! I\'m Susan, your Sports Scheduler assistant. How can I help you today?',
+            'hello': 'Hi! I\'m Susan, your Sports Schedulers assistant. How can I help you today?',
             'help': 'I can help you with:\n- Adding and managing games\n- Assigning officials\n- Managing leagues and locations\n- Understanding user roles\n- Navigation tips\n- Viewing reports and earnings',
             'games': 'To add a game, go to Game Management and click "Add Game". Select a league, location, date, and time. You can then assign officials manually or use auto-assignment.',
             'assign': 'Officials can be assigned manually from the game assignment page, or automatically based on their ranking and availability. The system checks for conflicts automatically.',
             'users': 'Administrators can manage users from the Admin Dashboard. You can add, edit, and manage user roles and league memberships.',
-            'admin': 'The Admin Dashboard shows user statistics and allows you to manage the system. Game Management shows game statistics and scheduling tools.',
             'leagues': 'Leagues organize games by sport and level. Each league can have different fee structures and official rankings.',
             'locations': 'Locations are venues where games are played. Each location can have multiple fields or courts.',
-            'status': 'Games progress through statuses: Draft → Ready → Released → Completed. Only released games are visible to officials.',
-            'ranking': 'Officials are ranked 1-5 within each league, with 5 being the highest. Rankings affect auto-assignment priority.',
-            'availability': 'Officials can set their availability to block out times when they cannot work games.',
-            'conflicts': 'The system automatically checks for scheduling conflicts, including 2-hour buffers and field double-bookings.',
-            'reports': 'Access financial and game reports from the Reports section. Officials can view earnings, admins can see league financials.',
-            'earnings': 'Officials can view and export their earnings reports showing games worked and fees earned.',
-            'export': 'You can export reports to CSV format for analysis in Excel or other programs.',
-            'notifications': 'The system sends email notifications for game assignments and reminders 72 and 24 hours before games.',
-            'communication': 'Officials receive email notifications about assignments, changes, and reminders automatically.',
-            'phase6': 'Phase 6 brings advanced features like bulk operations, enhanced mobile support, and performance improvements.',
-            'import': 'Bulk import features allow you to upload games, users, and assignments via Excel/CSV files.',
-            'mobile': 'The mobile interface is optimized for smartphones and tablets with touch-friendly controls.',
             'default': 'I\'m here to help! Try asking about games, assignments, users, leagues, reports, or navigation.'
         }
         
@@ -153,6 +150,49 @@ def chatbot_api():
         return jsonify({'response': response})
     except Exception as e:
         return jsonify({'response': 'Sorry, I encountered an error. Please try again.'})
+
+# Temporary debug routes
+@app.route('/debug-users')
+def debug_users():
+    """Temporary route to check if users exist"""
+    try:
+        users = User.query.all()
+        user_list = []
+        for user in users:
+            user_list.append({
+                'email': user.email,
+                'role': user.role,
+                'active': user.is_active
+            })
+        return f"Users in database: {user_list}"
+    except Exception as e:
+        return f"Database error: {str(e)}"
+
+@app.route('/create-admin-now')
+def create_admin_now():
+    """Force create admin user"""
+    try:
+        from werkzeug.security import generate_password_hash
+        
+        # Delete existing admin if any
+        existing = User.query.filter_by(email='admin@sportsscheduler.com').first()
+        if existing:
+            db.session.delete(existing)
+        
+        # Create new admin
+        admin = User(
+            email='admin@sportsscheduler.com',
+            first_name='Admin',
+            last_name='User',
+            role='superadmin',
+            password_hash=generate_password_hash('admin123'),
+            is_active=True
+        )
+        db.session.add(admin)
+        db.session.commit()
+        return "Admin user created! Try logging in now."
+    except Exception as e:
+        return f"Error: {str(e)}"
 
 # Redirect routes to proper blueprints
 @app.route('/admin')
@@ -188,51 +228,49 @@ def reports_redirect():
     """Redirect to reports dashboard"""
     return redirect(url_for('report.dashboard'))
 
-# Register blueprints (all completed phases)
+# Register blueprints
 from views.auth_routes import auth_bp
 from views.admin_routes import admin_bp
 
-# Add this import after your existing imports
+# Bulk operations
 try:
     from views.bulk_routes import bulk_bp
     app.register_blueprint(bulk_bp, url_prefix='/bulk')
-    print("✅ Bulk operations enabled")
-except ImportError as e:
-    print(f"⚠️ Bulk operations not available: {e}")
+    print("Bulk operations enabled")
+except ImportError:
+    pass
 
-# Add this import with your other blueprint imports (SAFE)
+# Enhanced chatbot
 try:
     from views.chatbot_routes import chatbot_bp
-    app.register_blueprint(chatbot_bp, url_prefix='/chatbot', name='enhanced_chatbot')
-    print("✅ Enhanced chatbot enabled")
-except ImportError as e:
-    print(f"⚠️ Chatbot not available: {e}")
-except ValueError as e:
-    print(f"⚠️ Chatbot blueprint conflict: {e}")
+    app.register_blueprint(chatbot_bp, url_prefix='/chatbot')
+    print("Enhanced chatbot enabled")
+except ImportError:
+    pass
 
-# Import league routes (Phase 3)
+# League routes
 try:
     from views.league_routes import league_bp
     app.register_blueprint(league_bp, url_prefix='/league')
-    print("✅ League routes loaded successfully")
-except ImportError as e:
-    print(f"⚠️  League routes not available: {e}")
+    print("League routes loaded successfully")
+except ImportError:
+    pass
 
-# Import game routes (Phase 4 - COMPLETED)
+# Game routes
 try:
     from views.game_routes import game_bp
     app.register_blueprint(game_bp, url_prefix='/game')
-    print("✅ Game routes loaded successfully")
-except ImportError as e:
-    print(f"⚠️  Game routes not available: {e}")
+    print("Game routes loaded successfully")
+except ImportError:
+    pass
 
-# Import report routes (Phase 5 - COMPLETED)
+# Report routes
 try:
     from views.report_routes import report_bp
     app.register_blueprint(report_bp, url_prefix='/report')
-    print("✅ Report routes loaded successfully")
-except ImportError as e:
-    print(f"⚠️  Report routes not available: {e}")
+    print("Report routes loaded successfully")
+except ImportError:
+    pass
 
 # Register core blueprints
 app.register_blueprint(auth_bp, url_prefix='/auth')
@@ -265,113 +303,39 @@ def setup_email_notifications():
     """Setup email notification service"""
     try:
         from utils.email_service import configure_email_service
-        # For development, we'll use the default settings (prints to console)
-        # In production, configure with real SMTP settings:
-        # configure_email_service('smtp.gmail.com', 587, 'your-email@gmail.com', 'your-password')
-        print("📧 Email notification service initialized (development mode)")
-    except ImportError as e:
-        print(f"⚠️  Email service not available: {e}")
+        print("Email notification service initialized")
+    except ImportError:
+        pass
 
 def create_demo_rankings():
-    """Create demo official rankings for testing - SAFE VERSION"""
+    """Create demo official rankings for testing"""
     try:
-        # Safe: Conditional imports with fallback behavior
-        try:
-            from models.database import User
-            from models.league import League
-            from models.availability import OfficialRanking
-        except ImportError as e:
-            print(f"⚠️  Availability models not available: {e}")
-            return  # Safe: Graceful degradation
+        from models.database import User
+        from models.league import League
+        from models.availability import OfficialRanking
         
-        # Safe: Check if tables exist before querying
-        try:
-            if OfficialRanking.query.count() > 0:
-                print("Rankings already exist in database")
-                return
-        except Exception as e:
-            print(f"⚠️  OfficialRanking table not ready: {e}")
-            return  # Safe: Graceful degradation
+        if OfficialRanking.query.count() > 0:
+            return
         
-        # Safe: Get demo users with error handling
-        try:
-            admin_user = User.query.filter_by(email='admin@sportsscheduler.com').first()
-            official_user = User.query.filter_by(email='official@sportsscheduler.com').first()
-            assigner_user = User.query.filter_by(email='assigner@sportsscheduler.com').first()
-            administrator_user = User.query.filter_by(email='administrator@sportsscheduler.com').first()
-        except Exception as e:
-            print(f"⚠️  User table not ready: {e}")
-            return  # Safe: Graceful degradation
-        
-        # Safe: Get leagues with error handling
-        try:
-            leagues = League.query.all()
-        except Exception as e:
-            print(f"⚠️  League table not ready: {e}")
-            return  # Safe: Graceful degradation
+        admin_user = User.query.filter_by(email='admin@sportsscheduler.com').first()
+        leagues = League.query.all()
         
         if admin_user and leagues:
             for league in leagues:
-                rankings_to_add = []
-                
-                if admin_user:
-                    rankings_to_add.append(OfficialRanking(
-                        user_id=admin_user.id,
-                        league_id=league.id,
-                        ranking=5,
-                        years_experience=15,
-                        games_worked=200
-                    ))
-                
-                if official_user:
-                    rankings_to_add.append(OfficialRanking(
-                        user_id=official_user.id,
-                        league_id=league.id,
-                        ranking=4,
-                        years_experience=5,
-                        games_worked=75
-                    ))
-                
-                if assigner_user:
-                    rankings_to_add.append(OfficialRanking(
-                        user_id=assigner_user.id,
-                        league_id=league.id,
-                        ranking=4,
-                        years_experience=8,
-                        games_worked=120
-                    ))
-                
-                if administrator_user:
-                    rankings_to_add.append(OfficialRanking(
-                        user_id=administrator_user.id,
-                        league_id=league.id,
-                        ranking=5,
-                        years_experience=12,
-                        games_worked=180
-                    ))
-                
-                # Safe: Add with error handling and rollback
-                for ranking in rankings_to_add:
-                    try:
-                        db.session.add(ranking)
-                    except Exception as e:
-                        print(f"⚠️  Error adding ranking: {e}")
-                        db.session.rollback()
-                        return  # Safe: Stop on error
-        
-        try:
+                ranking = OfficialRanking(
+                    user_id=admin_user.id,
+                    league_id=league.id,
+                    ranking=5,
+                    years_experience=15,
+                    games_worked=200
+                )
+                db.session.add(ranking)
+            
             db.session.commit()
-            print("✅ Demo rankings created successfully!")
-        except Exception as e:
-            print(f"❌ Error committing rankings: {e}")
-            db.session.rollback()
+            print("Demo rankings created successfully!")
         
-    except Exception as e:
-        print(f"❌ Unexpected error in create_demo_rankings: {e}")
-        try:
-            db.session.rollback()
-        except:
-            pass  # Safe: Don't fail on rollback error
+    except Exception:
+        pass
 
 @app.route('/profile/edit', methods=['GET', 'POST'])
 @login_required
@@ -440,121 +404,43 @@ def edit_profile():
     
     return render_template('profile_edit.html', user=current_user)
 
-# Add this import with your other blueprint imports (SAFE)
-try:
-    from views.chatbot_routes import chatbot_bp
-    app.register_blueprint(chatbot_bp, url_prefix='/chatbot')
-    print("✅ Enhanced chatbot enabled")
-except ImportError as e:
-    print(f"⚠️ Chatbot not available: {e}")
-
-@app.route('/debug-users')
-def debug_users():
-    """Temporary route to check if users exist"""
-    try:
-        users = User.query.all()
-        user_list = []
-        for user in users:
-            user_list.append({
-                'email': user.email,
-                'role': user.role,
-                'active': user.is_active
-            })
-        return f"Users in database: {user_list}"
-    except Exception as e:
-        return f"Database error: {str(e)}"
-
-# SAFE: Update existing chatbot API to use new system
-@app.route('/api/chatbot', methods=['POST'])
-def chatbot_api_legacy():
-    """Legacy chatbot API - safely redirects to new system"""
-    try:
-        from flask import request, jsonify
-        # Forward request to new system
-        message = request.json.get('message', '') if request.json else ''
-        
-        # Simple fallback if new system not available
-        if message.lower() in ['hello', 'hi', 'help']:
-            return jsonify({
-                'response': "Hi! I'm Susan, your assistant. The enhanced chat system is loading..."
-            })
-        
-        return jsonify({
-            'response': "I'm here to help! Please use the chat widget for better assistance."
-        })
-    except Exception:
-        return jsonify({
-            'response': "Chat system temporarily unavailable. Please try again."
-        })
-
 if __name__ == '__main__':
     with app.app_context():
         try:
-            # Safe: Create basic tables first (existing functionality)
+            # Create basic tables first
             db.create_all()
-            print("✅ Database tables created successfully!")
+            print("Database tables created successfully!")
 
-            # Import new models to create tables
-            try:
-                from models.availability import OfficialAvailability, OfficialRanking
-                db.create_all()
-            except ImportError:
-                pass
+            # Create admin user if it doesn't exist
+            admin = User.query.filter_by(email='admin@sportsscheduler.com').first()
+            if not admin:
+                from werkzeug.security import generate_password_hash
+                admin = User(
+                    email='admin@sportsscheduler.com',
+                    first_name='Admin',
+                    last_name='User',
+                    role='superadmin',
+                    password_hash=generate_password_hash('admin123'),
+                    is_active=True
+                )
+                db.session.add(admin)
+                db.session.commit()
+                print("Admin user created successfully!")
+            else:
+                print("Admin user already exists")
 
-            try:
-                from sqlalchemy import text
-                
-                with db.engine.connect() as conn:
-                    # Check and add game ranking columns
-                    try:
-                        conn.execute(text('ALTER TABLE games ADD COLUMN game_ranking INTEGER DEFAULT 3'))
-                        print("✅ Added game_ranking column")
-                    except Exception:
-                        pass  # Column already exists
-                        
-                    try:
-                        conn.execute(text('ALTER TABLE games ADD COLUMN ranking_notes TEXT'))
-                        print("✅ Added games ranking_notes column")
-                    except Exception:
-                        pass  # Column already exists
-                        
-                    # Check and add user ranking columns
-                    try:
-                        conn.execute(text('ALTER TABLE users ADD COLUMN default_ranking INTEGER DEFAULT 3'))
-                        print("✅ Added default_ranking column")
-                    except Exception:
-                        pass  # Column already exists
-                        
-                    try:
-                        conn.execute(text('ALTER TABLE users ADD COLUMN ranking_notes TEXT'))
-                        print("✅ Added users ranking_notes column")
-                    except Exception:
-                        pass  # Column already exists
-                        
-                    conn.commit()
-                    
-            except Exception as e:
-                print(f"ℹ️  Ranking columns setup: {e}")
-            
-            # Safe: Create demo users (existing functionality)
+            # Create other demo users
             create_demo_users()
             
-            # Safe: Only try advanced features if basic ones work
+            # Try to create rankings if available
             try:
-                # Test if we can import availability models
                 from models.availability import OfficialAvailability, OfficialRanking
-                print("✅ Availability models available - creating demo rankings")
                 create_demo_rankings()
-            except ImportError as e:
-                print(f"⚠️  Availability system not available: {e}")
-                print("ℹ️  This is normal - availability features will be added later")
-            except Exception as e:
-                print(f"⚠️  Error with availability system: {e}")
-                print("ℹ️  Continuing without availability features")
+            except ImportError:
+                print("Availability system not available")
                 
         except Exception as e:
-            print(f"❌ Database initialization error: {e}")
-            print("🔧 Some features may not be available")
+            print(f"Database initialization error: {e}")
     
     setup_email_notifications()
     
@@ -566,4 +452,7 @@ if __name__ == '__main__':
     print("Contact: admin@sportsschedulers.com")
     print("=" * 60)
     
-    app.run(host='localhost', port=5000, debug=True)
+    # Production-ready server configuration
+    port = int(os.environ.get('PORT', 5000))
+    debug = os.environ.get('DEBUG', 'False').lower() == 'true'
+    app.run(host='0.0.0.0', port=port, debug=debug)
