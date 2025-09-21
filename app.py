@@ -448,6 +448,22 @@ try:
 except ImportError as e:
     print(f"⚠️ Chatbot not available: {e}")
 
+@app.route('/debug-users')
+def debug_users():
+    """Temporary route to check if users exist"""
+    try:
+        users = User.query.all()
+        user_list = []
+        for user in users:
+            user_list.append({
+                'email': user.email,
+                'role': user.role,
+                'active': user.is_active
+            })
+        return f"Users in database: {user_list}"
+    except Exception as e:
+        return f"Database error: {str(e)}"
+
 # SAFE: Update existing chatbot API to use new system
 @app.route('/api/chatbot', methods=['POST'])
 def chatbot_api_legacy():
