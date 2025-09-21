@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard - Sports Scheduler{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1><i class="bi bi-speedometer2 me-2"></i>Admin Dashboard</h1>
+            <div class="btn-group">
+                <a href="{{ url_for('admin.add_user') }}" class="btn btn-primary">
+                    <i class="bi bi-person-plus me-1"></i>Add User
+                </a>
+                <a href="{{ url_for('admin.manage_users') }}" class="btn btn-outline-primary">
+                    <i class="bi bi-people me-1"></i>Manage Users
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Statistics Cards -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body text-center">
+                <i class="bi bi-people-fill display-4 text-primary"></i>
+                <h3 class="mt-2">{{ total_users }}</h3>
+                <p class="text-muted mb-0">Total Users</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body text-center">
+                <i class="bi bi-person-check-fill display-4 text-success"></i>
+                <h3 class="mt-2">{{ active_users }}</h3>
+                <p class="text-muted mb-0">Active Users</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body text-center">
+                <i class="bi bi-person-x-fill display-4 text-warning"></i>
+                <h3 class="mt-2">{{ inactive_users }}</h3>
+                <p class="text-muted mb-0">Inactive Users</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body text-center">
+                <i class="bi bi-shield-check display-4 text-info"></i>
+                <h3 class="mt-2">{{ role_stats.get('administrator', 0) + role_stats.get('superadmin', 0) }}</h3>
+                <p class="text-muted mb-0">Administrators</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Role Distribution -->
+    <div class="col-lg-6 mb-4">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white">
+                <h5 class="mb-0"><i class="bi bi-pie-chart me-2"></i>User Roles</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <tbody>
+                            <tr>
+                                <td><i class="bi bi-shield-fill text-danger me-2"></i>Superadmin</td>
+                                <td class="text-end">{{ role_stats.get('superadmin', 0) }}</td>
+                            </tr>
+                            <tr>
+                                <td><i class="bi bi-gear-fill text-primary me-2"></i>Administrator</td>
+                                <td class="text-end">{{ role_stats.get('administrator', 0) }}</td>
+                            </tr>
+                            <tr>
+                                <td><i class="bi bi-calendar-check text-success me-2"></i>Assigner</td>
+                                <td class="text-end">{{ role_stats.get('assigner', 0) }}</td>
+                            </tr>
+                            <tr>
+                                <td><i class="bi bi-person-badge text-info me-2"></i>Official</td>
+                                <td class="text-end">{{ role_stats.get('official', 0) }}</td>
+                            </tr>
+                            <tr>
+                                <td><i class="bi bi-eye text-secondary me-2"></i>Viewer</td>
+                                <td class="text-end">{{ role_stats.get('viewer', 0) }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Recent Users -->
+    <div class="col-lg-6 mb-4">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white">
+                <h5 class="mb-0"><i class="bi bi-clock-history me-2"></i>Recent Users</h5>
+            </div>
+            <div class="card-body">
+                {% if recent_users %}
+                <div class="list-group list-group-flush">
+                    {% for user in recent_users %}
+                    <div class="list-group-item border-0 px-0 py-2">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-1">{{ user.full_name }}</h6>
+                                <small class="text-muted">{{ user.email }}</small>
+                            </div>
+                            <div class="text-end">
+                                <span class="badge bg-{{ 'success' if user.is_active else 'secondary' }}">
+                                    {{ user.role.title() }}
+                                </span>
+                                <br>
+                                <small class="text-muted">{{ user.created_at.strftime('%m/%d/%Y') if user.created_at else 'Unknown' }}</small>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-muted">No users found.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

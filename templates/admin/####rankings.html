@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Official Rankings - Sports Scheduler</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .ranking-card {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            transition: all 0.3s ease;
+        }
+        
+        .ranking-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+        }
+        
+        .ranking-header {
+            background: linear-gradient(135deg, var(--bs-primary), var(--bs-info));
+            color: white;
+            padding: 20px;
+            border-radius: 10px 10px 0 0;
+        }
+        
+        .ranking-stars {
+            display: flex;
+            gap: 5px;
+            margin: 10px 0;
+        }
+        
+        .star {
+            font-size: 1.5rem;
+            color: #ddd;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .star.active {
+            color: #ffc107;
+        }
+        
+        .star:hover {
+            color: #ffc107;
+            transform: scale(1.2);
+        }
+        
+        .official-card {
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            background: #f8f9fa;
+        }
+        
+        .official-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .official-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: var(--bs-primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+        
+        .ranking-badge {
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+        
+        .ranking-1 { background: #28a745; color: white; }
+        .ranking-2 { background: #20c997; color: white; }
+        .ranking-3 { background: #ffc107; color: #212529; }
+        .ranking-4 { background: #fd7e14; color: white; }
+        .ranking-5 { background: #dc3545; color: white; }
+        .ranking-unranked { background: #6c757d; color: white; }
+        
+        .stats-card {
+            background: #e7f3ff;
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+        }
+        
+        .league-selector {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .ranking-explanation {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .bulk-actions {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .search-box {
+            position: relative;
+            margin-bottom: 20px;
+        }
+        
+        .search-box input {
+            padding-right: 40px;
+        }
+        
+        .search-box .search-icon {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #6c757d;
+        }
+    </style>
+</head>
+<body>
+    {% extends "base.html" %}
+    {% block title %}Official Rankings{% endblock %}
+    
+    {% block content %}
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-12">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2><i class="fas fa-trophy text-warning"></i> Official Rankings</h2>
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-primary" onclick="showBulkRankingModal()">
+                            <i class="fas fa-users"></i> Bulk Rank
+                        </button>
+                        <button type="button" class="btn btn-outline-primary" onclick="exportRankings()">
+                            <i class="fas fa-download"></i> Export
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary" onclick="showRankingHelp()">
+                            <i class="fas fa-question-circle"></i> Help
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- League Selector -->
+                <div class="league-selector">
+                    <div class="row align-items-center">
+                        <div class="col-md-4">
+                            <label class="form-label"><strong>Select League:</strong></label>
+                            <select class="form-select" id="league-selector" onchange="loadRankings()">
+                                <option value="">Select a league...</option>
+                                {% for league in leagues %}
+                                <option value="{{ league.id }}">{{ league.name }} ({{ league.level }})</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="search-box">
+                                <input type="text" class="form-control" id="official-search" placeholder="Search officials..." onkeyup="filterOfficials()">
+                                <i class="fas fa-search search-icon"></i>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="stats-card">
+                                <h6>League Statistics</h6>
+                                <div class="row">
+                                    <div class="col-6">
+                                        <strong id="ranked-count">0</strong><br>
+                                        <small>Ranked</small>
+                                    </div>
+                                    <div class="col-6">
+                                        <strong id="unranked-count">0</strong><br>
+                                        <small>Unranked</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Ranking Explanation -->
+                <div class="ranking-explanation">
+                    <h6><i class="fas fa-info-circle"></i> Ranking System (1-5 Scale)</h6>
+                    <div class="row">
+                        <div class="col-md-2"><span class="ranking-badge ranking-1">5 - Elite</span> Expert level, highest assignments</div>
+                        <div class="col-md-2"><span class="ranking-badge ranking-2">4 - Advanced</span> Very skilled, reliable</div>
+                        <div class="col-md-2"><span class="ranking-badge ranking-3">3 - Standard</span> Average skill level</div>
+                        <div class="col-md-2"><span class="ranking-badge ranking-4">2 - Developing</span> Learning, needs guidance</div>
+                        <div class="col-md-2"><span class="ranking-badge ranking-5">1 - Novice</span> New, basic assignments only</div>
+                        <div class="col-md-2"><span class="ranking-badge ranking-unranked">Unranked</span> Not yet evaluated</div>
+                    </div>
+                </div>
+                
+                <!-- Rankings List -->
+                <div id="rankings-container">
+                    <div class="text-center py-5">
+                        <i class="fas fa-trophy fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">Select a league to view and manage official rankings</h5>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Ranking Modal -->
+    <div class="modal fade" id="rankingModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Set Ranking for <span id="modal-official-name"></span></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="official-info-modal mb-3">
+                        <div id="modal-official-info"></div>
+                    </div>
+                    
+                    <div class="form-group mb-3">
+                        <label class="form-label">Current Ranking</label>
+                        <div class="ranking-stars" id="modal-ranking-stars">
+                            <span class="star" data-rating="1"><i class="fas fa-star"></i></span>
+                            <span class="star" data-rating="2"><i class="fas fa-star"></i></span>
+                            <span class="star" data-rating="3"><i class="fas fa-star"></i></span>
+                            <span class="star" data-rating="4"><i class="fas fa-star"></i></span>
+                            <span class="star" data-rating="5"><i class="fas fa-star"></i></span>
+                        </div>
+                        <div class="form-text">Click stars to set ranking (1-5)</div>
+                    </div>
+                    
+                    <div class="form-group mb-3">
+                        <label class="form-label">Ranking Notes (Optional)</label>
+                        <textarea class="form-control" id="ranking-notes" rows="3" placeholder="Add notes about this official's performance, strengths, areas for improvement..."></textarea>
+                    </div>
+                    
+                    <div class="form-group mb-3">
+                        <label class="form-label">Assignment Level Recommendation</label>
+                        <select class="form-select" id="assignment-level">
+                            <option value="">No restriction</option>
+                            <option value="youth">Youth games only</option>
+                            <option value="high_school">High school and below</option>
+                            <option value="college">All levels</option>
+                            <option value="elite">Elite/Championship games</option>
+                        </select>
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <h6><i class="fas fa-lightbulb"></i> Ranking Impact:</h6>
+                        <ul class="mb-0">
+                            <li>Higher ranked officials get priority in auto-assignment</li>
+                            <li>Rankings are league-specific</li>
+                            <li>Used for workload balancing and quality control</li>
+                            <li>Officials can see their overall ranking (not specific scores)</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-danger" onclick="removeRanking()" id="remove-ranking-btn" style="display: none;">Remove Ranking</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="saveRanking()">Save Ranking</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Bulk Ranking Modal -->
+    <div class="modal fade" id="bulkRankingModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Bulk Set Rankings</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group mb-3">
+                                <label class="form-label">Select League</label>
+                                <select class="form-select" id="bulk-league">
+                                    <option value="">Select league...</option>
+                                    {% for league in leagues %}
+                                    <option value="{{ league.id }}">{{ league.name }} ({{ league.level }})</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            
+                            <div class="form-group mb-3">
+                                <label class="form-label">Default Ranking</label>
+                                <select class="form-select" id="bulk-ranking">
+                                    <option value="3">3 - Standard</option>
+                                    <option value="1">1 - Novice</option>
+                                    <option value="2">2 - Developing</option>
+                                    <option value="4">4 - Advanced</option>
+                                    <option value="5">5 - Elite</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group mb-3">
+                                <label class="form-label">Apply To</label>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="bulk-apply" id="bulk-unranked" value="unranked" checked>
+                                    <label class="form-check-label" for="bulk-unranked">Unranked officials only</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="bulk-apply" id="bulk-all" value="all">
+                                    <label class="form-check-label" for="bulk-all">All officials (override existing)</label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="alert alert-warning">
+                                <h6><i class="fas fa-exclamation-triangle"></i> Bulk Ranking Notice</h6>
+                                <p>This will set rankings for multiple officials at once. Consider the following:</p>
+                                <ul class="mb-0">
+                                    <li>Review each official individually later</li>
+                                    <li>Bulk rankings are a starting point</li>
+                                    <li>Consider experience and league level</li>
+                                    <li>You can always adjust rankings later</li>
+                                </ul>
+                            </div>
+                            
+                            <div id="bulk-preview" style="display: none;">
+                                <h6>Preview:</h6>
+                                <div id="bulk-preview-content"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="applyBulkRanking()">Apply Rankings</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let currentOfficialId = null;
+        let currentLeagueId = null;
+        let rankingsData = {};
+        
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize star rating handlers
+            setupStarRatings();
+        });
+        
+        function loadRankings() {
+            const leagueId = document.getElementById('league-selector').value;
+            if (!leagueId) {
+                document.getElementById('rankings-container').innerHTML = `
+                    <div class="text-center py-5">
+                        <i class="fas fa-trophy fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">Select a league to view and manage official rankings</h5>
+                    </div>
+                `;
+                return;
+            }
+            
+            currentLeagueId = leagueId;
+            
+            // Show loading
+            document.getElementById('rankings-container').innerHTML = `
+                <div class="text-center py-5">
+                    <div class="spinner-border text-primary" role="status"></div>
+                    <h5 class="text-muted mt-3">Loading rankings...</h5>
+                </div>
+            `;
+            
+            // Fetch rankings data
+            fetch(`/admin/rankings/data/${leagueId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        rankingsData = data.rankings;
+                        displayRankings(data.officials, data.rankings);
+                        updateStats(data.officials, data.rankings);
+                    } else {
+                        showAlert('Error loading rankings: ' + data.message, 'danger');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showAlert('Error loading rankings', 'danger');
+                });
+        }
+        
+        function displayRankings(officials, rankings) {
+            const container = document.getElementById('rankings-container');
+            
+            if (officials.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-5">
+                        <i class="fas fa-users fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">No officials found in this league</h5>
+                        <p class="text-muted">Add officials to the league to manage their rankings.</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            // Sort officials by ranking (highest first), then by name
+            officials.sort((a, b) => {
+                const rankingA = rankings[a.id] ? rankings[a.id].ranking : 0;
+                const rankingB = rankings[b.id] ? rankings[b.id].ranking : 0;
+                
+                if (rankingA !== rankingB) {
+                    return rankingB - rankingA; // Higher ranking first
+                }
+                
+                return (a.first_name + ' ' + a.last_name).localeCompare(b.first_name + ' ' + b.last_name);
+            });
+            
+            let html = '';
+            
+            officials.forEach(official => {
+                const ranking = rankings[official.id];
+                const rankingValue = ranking ? ranking.ranking : 0;
+                const rankingClass = rankingValue > 0 ? `ranking-${rankingValue}` : 'ranking-unranked';
+                const rankingText = rankingValue > 0 ? `${rankingValue} - ${getRankingText(rankingValue)}` : 'Unranked';
+                
+                const initials = (official.first_name.charAt(0) + official.last_name.charAt(0)).toUpperCase();
+                
+                html += `
+                    <div class="official-card" data-official-name="${official.first_name} ${official.last_name}">
+                        <div class="official-info">
+                            <div class="official-avatar">${initials}</div>
+                            <div class="flex-grow-1">
+                                <h6 class="mb-1">${official.first_name} ${official.last_name}</h6>
+                                <small class="text-muted">
+                                    <i class="fas fa-envelope"></i> ${official.email}
+                                    ${official.phone ? `<i class="fas fa-phone ms-3"></i> ${official.phone}` : ''}
+                                </small>
+                                ${ranking && ranking.notes ? `<div class="mt-1"><small class="text-info"><i class="fas fa-sticky-note"></i> ${ranking.notes}</small></div>` : ''}
+                            </div>
+                            <div class="text-end">
+                                <div class="mb-2">
+                                    <span class="ranking-badge ${rankingClass}">${rankingText}</span>
+                                </div>
+                                <div class="btn-group btn-group-sm">
+                                    <button class="btn btn-outline-primary" onclick="openRankingModal(${official.id}, '${official.first_name}', '${official.last_name}')">
+                                        <i class="fas fa-edit"></i> Rank
+                                    </button>
+                                    <button class="btn btn-outline-info" onclick="viewOfficialStats(${official.id})">
+                                        <i class="fas fa-chart-bar"></i> Stats
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        ${ranking && ranking.assignment_level ? `
+                            <div class="mt-2">
+                                <small class="badge bg-secondary">
+                                    <i class="fas fa-layer-group"></i> ${ranking.assignment_level.replace('_', ' ').toUpperCase()}
+                                </small>
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+        }
+        
+        function getRankingText(ranking) {
+            const rankingTexts = {
+                1: 'Novice',
+                2: 'Developing', 
+                3: 'Standard',
+                4: 'Advanced',
+                5: 'Elite'
+            };
+            return rankingTexts[ranking] || 'Unknown';
+        }
+        
+        function updateStats(officials, rankings) {
+            let rankedCount = 0;
+            let unrankedCount = 0;
+            
+            officials.forEach(official => {
+                if (rankings[official.id] && rankings[official.id].ranking > 0) {
+                    rankedCount++;
+                } else {
+                    unrankedCount++;
+                }
+            });
+            
+            document.getElementById('ranked-count').textContent = rankedCount;
+            document.getElementById('unranked-count').textContent = unrankedCount;
+        }
+        
+        function openRankingModal(officialId, firstName, lastName) {
+            currentOfficialId = officialId;
+            
+            // Set modal title and info
+            document.getElementById('modal-official-name').textContent = `${firstName} ${lastName}`;
+            
+            // Load existing ranking if available
+            const existingRanking = rankingsData[officialId];
+            if (existingRanking) {
+                setStarRating(existingRanking.ranking);
+                document.getElementById('ranking-notes').value = existingRanking.notes || '';
+                document.getElementById('assignment-level').value = existingRanking.assignment_level || '';
+                document.getElementById('remove-ranking-btn').style.display = 'inline-block';
+            } else {
+                setStarRating(0);
+                document.getElementById('ranking-notes').value = '';
+                document.getElementById('assignment-level').value = '';
+                document.getElementById('remove-ranking-btn').style.display = 'none';
+            }
+            
+            // Show modal
+            new bootstrap.Modal(document.getElementById('rankingModal')).show();
+        }
+        
+        function setupStarRatings() {
+            const stars = document.querySelectorAll('#modal-ranking-stars .star');
+            
+            stars.forEach(star => {
+                star.addEventListener('click', function() {
+                    const rating = parseInt(this.dataset.rating);
+                    setStarRating(rating);
+                });
+                
+                star.addEventListener('mouseover', function() {
+                    const rating = parseInt(this.dataset.rating);
+                    highlightStars(rating);
+                });
+            });
+            
+            document.getElementById('modal-ranking-stars').addEventListener('mouseleave', function() {
+                const currentRating = getCurrentStarRating();
+                highlightStars(currentRating);
+            });
+        }
+        
+        function setStarRating(rating) {
+            const stars = document.querySelectorAll('#modal-ranking-stars .star');
+            stars.forEach((star, index) => {
+                if (index < rating) {
+                    star.classList.add('active');
+                } else {
+                    star.classList.remove('active');
+                }
+            });
+        }
+        
+        function highlightStars(rating) {
+            const stars = document.querySelectorAll('#modal-ranking-stars .star');
+            stars.forEach((star, index) => {
+                if (index < rating) {
+                    star.style.color = '#ffc107';
+                } else {
+                    star.style.color = '#ddd';
+                }
+            });
+        }
+        
+        function getCurrentStarRating() {
+            return document.querySelectorAll('#modal-ranking-stars .star.active').length;
+        }
+        
+        function saveRanking() {
+            const ranking = getCurrentStarRating();
+            const notes = document.getElementById('ranking-notes').value;
+            const assignmentLevel = document.getElementById('assignment-level').value;
+            
+            if (ranking === 0) {
+                showAlert('Please select a ranking (1-5 stars)', 'warning');
+                return;
+            }
+            
+            const data = {
+                official_id: currentOfficialId,
+                league_id: currentLeagueId,
+                ranking: ranking,
+                notes: notes,
+                assignment_level: assignmentLevel
+            };
+            
+            // Save ranking
+            fetch('/admin/rankings/save', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.success) {
+                    // Update local data
+                    rankingsData[currentOfficialId] = data;
+                    
+                    // Reload rankings display
+                    loadRankings();
+                    
+                    // Close modal
+                    bootstrap.Modal.getInstance(document.getElementById('rankingModal')).hide();
+                    
+                    showAlert('Ranking saved successfully!', 'success');
+                } else {
+                    showAlert('Error saving ranking: ' + result.message, 'danger');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showAlert('Error saving ranking', 'danger');
+            });
+        }
+        
+        function removeRanking() {
+            if (!confirm('Are you sure you want to remove this ranking?')) {
+                return;
+            }
+            
+            fetch('/admin/rankings/remove', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    official_id: currentOfficialId,
+                    league_id: currentLeagueId
+                })
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.success) {
+                    // Remove from local data
+                    delete rankingsData[currentOfficialId];
+                    
+                    // Reload rankings display
+                    loadRankings();
+                    
+                    // Close modal
+                    bootstrap.Modal.getInstance(document.getElementById('rankingModal')).hide();
+                    
+                    showAlert('Ranking removed successfully!', 'success');
+                } else {
+                    showAlert('Error removing ranking: ' + result.message, 'danger');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showAlert('Error removing ranking', 'danger');
+            });
+        }
+        
+        function filterOfficials() {
+            const searchTerm = document.getElementById('official-search').value.toLowerCase();
+            const officialCards = document.querySelectorAll('.official-card');
+            
+            officialCards.forEach(card => {
+                const officialName = card.dataset.officialName.toLowerCase();
+                if (officialName.includes(searchTerm)) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        }
+        
+        function showBulkRankingModal() {
+            new bootstrap.Modal(document.getElementById('bulkRankingModal')).show();
+        }
+        
+        function applyBulkRanking() {
+            const leagueId = document.getElementById('bulk-league').value;
+            const ranking = document.getElementById('bulk-ranking').value;
+            const applyTo = document.querySelector('input[name="bulk-apply"]:checked').value;
+            
+            if (!leagueId) {
+                showAlert('Please select a league', 'warning');
+                return;
+            }
+            
+            if (!confirm(`Apply ranking ${ranking} to ${applyTo} officials in this league?`)) {
+                return;
+            }
+            
+            const data = {
+                league_id: leagueId,
+                ranking: parseInt(ranking),
+                apply_to: applyTo
+            };
+            
+            fetch('/admin/rankings/bulk', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.success) {
+                    // Reload current view if same league
+                    if (currentLeagueId == leagueId) {
+                        loadRankings();
+                    }
+                    
+                    bootstrap.Modal.getInstance(document.getElementById('bulkRankingModal')).hide();
+                    showAlert(`Successfully applied rankings to ${result.officials_updated} officials`, 'success');
+                } else {
+                    showAlert('Error applying bulk rankings: ' + result.message, 'danger');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showAlert('Error applying bulk rankings', 'danger');
+            });
+        }
+        
+        function viewOfficialStats(officialId) {
+            // Redirect to official stats page or show stats modal
+            window.open(`/admin/official/${officialId}/stats`, '_blank');
+        }
+        
+        function exportRankings() {
+            if (!currentLeagueId) {
+                showAlert('Please select a league first', 'warning');
+                return;
+            }
+            
+            window.open(`/admin/rankings/export/${currentLeagueId}`, '_blank');
+        }
+        
+        function showRankingHelp() {
+            const helpContent = `
+                <div class="modal fade" id="helpModal" tabindex="-1">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">Official Ranking System Help</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body">
+                                <h6>How Rankings Work:</h6>
+                                <ul>
+                                    <li>Rankings are on a 1-5 scale (1 = Novice, 5 = Elite)</li>
+                                    <li>Rankings are specific to each league</li>
+                                    <li>Higher ranked officials get priority in auto-assignment</li>
+                                    <li>Rankings help balance workload and maintain quality</li>
+                                </ul>
+                                
+                                <h6>Best Practices:</h6>
+                                <ul>
+                                    <li>Start new officials at rank 2-3 and adjust based on performance</li>
+                                    <li>Use notes to record specific strengths and areas for improvement</li>
+                                    <li>Review and update rankings regularly (quarterly recommended)</li>
+                                    <li>Consider experience, rules knowledge, and game management skills</li>
+                                    <li>Use assignment level restrictions for quality control</li>
+                                </ul>
+                                
+                                <h6>Assignment Impact:</h6>
+                                <ul>
+                                    <li>Rank 5: Elite/Championship games, highest priority</li>
+                                    <li>Rank 4: Advanced games, regular assignments</li>
+                                    <li>Rank 3: Standard games, balanced workload</li>
+                                    <li>Rank 2: Developmental games, mentoring opportunities</li>
+                                    <li>Rank 1: Basic games, close supervision recommended</li>
+                                </ul>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Got it!</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Add modal to page and show it
+            document.body.insertAdjacentHTML('beforeend', helpContent);
+            new bootstrap.Modal(document.getElementById('helpModal')).show();
+            
+            // Remove modal after hiding
+            document.getElementById('helpModal').addEventListener('hidden.bs.modal', function() {
+                this.remove();
+            });
+        }
+        
+        function showAlert(message, type = 'info') {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+            alertDiv.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            
+            document.querySelector('.container-fluid').insertBefore(alertDiv, document.querySelector('.container-fluid').firstChild);
+            
+            setTimeout(() => {
+                alertDiv.remove();
+            }, 5000);
+        }
+    </script>
+    {% endblock %}
+</body>
+</html>

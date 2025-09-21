@@ -1,0 +1,308 @@
+<!-- templates/admin/add_user.html - Add New User Form -->
+{% extends "base.html" %}
+
+{% block title %}Add User - Sports Scheduler{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1><i class="bi bi-person-plus me-2"></i>Add New User</h1>
+            <a href="{{ url_for('admin.manage_users') }}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-1"></i>Back to Users
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="bi bi-person-fill-add me-2"></i>User Information</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="first_name" class="form-label">First Name *</label>
+                            <input type="text" class="form-control" id="first_name" name="first_name" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="last_name" class="form-label">Last Name *</label>
+                            <input type="text" class="form-control" id="last_name" name="last_name" required>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="email" class="form-label">Email Address *</label>
+                            <input type="email" class="form-control" id="email" name="email" required>
+                            <div class="form-text">This will be used for login</div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="phone" class="form-label">Phone Number</label>
+                            <input type="tel" class="form-control" id="phone" name="phone" placeholder="(555) 123-4567">
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="role" class="form-label">Role *</label>
+                            <select class="form-select" id="role" name="role" required>
+                                <option value="">Select Role</option>
+                                {% if current_user.is_superadmin %}
+                                <option value="superadmin">Superadmin</option>
+                                {% endif %}
+                                <option value="administrator">Administrator</option>
+                                <option value="assigner">Assigner</option>
+                                <option value="official" selected>Official</option>
+                                <option value="viewer">Viewer</option>
+                            </select>
+                            <div class="form-text">
+                                <small>
+                                    <strong>Superadmin:</strong> Full system access<br>
+                                    <strong>Administrator:</strong> Manage leagues and users<br>
+                                    <strong>Assigner:</strong> Assign officials to games<br>
+                                    <strong>Official:</strong> View assignments and update availability<br>
+                                    <strong>Viewer:</strong> Read-only access to reports
+                                </small>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="password" class="form-label">Password *</label>
+                            <input type="password" class="form-control" id="password" name="password" required minlength="6">
+                            <div class="form-text">Minimum 6 characters</div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-end gap-2">
+                        <a href="{{ url_for('admin.manage_users') }}" class="btn btn-outline-secondary">Cancel</a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-lg me-1"></i>Create User
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+<!-- templates/admin/edit_user.html - Edit User Form -->
+{% extends "base.html" %}
+
+{% block title %}Edit User - Sports Scheduler{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1><i class="bi bi-person-gear me-2"></i>Edit User: {{ user.full_name }}</h1>
+            <a href="{{ url_for('admin.manage_users') }}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-1"></i>Back to Users
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="bi bi-person-fill-gear me-2"></i>User Information</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="first_name" class="form-label">First Name *</label>
+                            <input type="text" class="form-control" id="first_name" name="first_name" 
+                                   value="{{ user.first_name }}" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="last_name" class="form-label">Last Name *</label>
+                            <input type="text" class="form-control" id="last_name" name="last_name" 
+                                   value="{{ user.last_name }}" required>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="email" class="form-label">Email Address</label>
+                            <input type="email" class="form-control" id="email" name="email" 
+                                   value="{{ user.email }}" readonly>
+                            <div class="form-text">Email cannot be changed</div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="phone" class="form-label">Phone Number</label>
+                            <input type="tel" class="form-control" id="phone" name="phone" 
+                                   value="{{ user.phone or '' }}" placeholder="(555) 123-4567">
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="role" class="form-label">Role *</label>
+                            <select class="form-select" id="role" name="role" required>
+                                {% if current_user.is_superadmin %}
+                                <option value="superadmin" {{ 'selected' if user.role == 'superadmin' }}>Superadmin</option>
+                                {% endif %}
+                                <option value="administrator" {{ 'selected' if user.role == 'administrator' }}>Administrator</option>
+                                <option value="assigner" {{ 'selected' if user.role == 'assigner' }}>Assigner</option>
+                                <option value="official" {{ 'selected' if user.role == 'official' }}>Official</option>
+                                <option value="viewer" {{ 'selected' if user.role == 'viewer' }}>Viewer</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="new_password" class="form-label">New Password</label>
+                            <input type="password" class="form-control" id="new_password" name="new_password" minlength="6">
+                            <div class="form-text">Leave blank to keep current password</div>
+                        </div>
+                    </div>
+                    
+                    <!-- User Status and Info -->
+                    <div class="row">
+                        <div class="col-12 mb-3">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h6>Account Information</h6>
+                                    <div class="row">
+                                        <div class="col-md-4">
+                                            <strong>Status:</strong> 
+                                            <span class="badge bg-{{ 'success' if user.is_active else 'secondary' }}">
+                                                {{ 'Active' if user.is_active else 'Inactive' }}
+                                            </span>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <strong>Created:</strong> {{ user.created_at.strftime('%B %d, %Y') if user.created_at else 'Unknown' }}
+                                        </div>
+                                        <div class="col-md-4">
+                                            <strong>Last Login:</strong> {{ user.last_login.strftime('%B %d, %Y') if user.last_login else 'Never' }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            {% if user.id != current_user.id %}
+                            <!-- Toggle Status Button -->
+                            <form method="POST" action="{{ url_for('admin.toggle_user_status', user_id=user.id) }}" class="d-inline">
+                                <button type="submit" class="btn btn-{{ 'warning' if user.is_active else 'success' }}"
+                                        onclick="return confirm('{{ 'Deactivate' if user.is_active else 'Activate' }} this user?')">
+                                    <i class="bi bi-{{ 'pause' if user.is_active else 'play' }} me-1"></i>
+                                    {{ 'Deactivate' if user.is_active else 'Activate' }} User
+                                </button>
+                            </form>
+                            
+                            {% if current_user.is_superadmin %}
+                            <!-- Delete Button -->
+                            <form method="POST" action="{{ url_for('admin.delete_user', user_id=user.id) }}" class="d-inline ms-2">
+                                <button type="submit" class="btn btn-danger"
+                                        onclick="return confirm('Delete this user permanently? This action cannot be undone.')">
+                                    <i class="bi bi-trash me-1"></i>Delete User
+                                </button>
+                            </form>
+                            {% endif %}
+                            {% endif %}
+                        </div>
+                        
+                        <div>
+                            <a href="{{ url_for('admin.manage_users') }}" class="btn btn-outline-secondary me-2">Cancel</a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-lg me-1"></i>Update User
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+<!-- templates/auth/edit_profile.html - User Profile Edit -->
+{% extends "base.html" %}
+
+{% block title %}Edit Profile - Sports Scheduler{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1><i class="bi bi-person-gear me-2"></i>Edit My Profile</h1>
+            <a href="{{ url_for('profile') }}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-1"></i>Back to Profile
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="bi bi-person-fill-gear me-2"></i>Personal Information</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="first_name" class="form-label">First Name *</label>
+                            <input type="text" class="form-control" id="first_name" name="first_name" 
+                                   value="{{ user.first_name }}" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="last_name" class="form-label">Last Name *</label>
+                            <input type="text" class="form-control" id="last_name" name="last_name" 
+                                   value="{{ user.last_name }}" required>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="email" class="form-label">Email Address</label>
+                            <input type="email" class="form-control" id="email" name="email" 
+                                   value="{{ user.email }}" readonly>
+                            <div class="form-text">Contact administrator to change email</div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="phone" class="form-label">Phone Number</label>
+                            <input type="tel" class="form-control" id="phone" name="phone" 
+                                   value="{{ user.phone or '' }}" placeholder="(555) 123-4567">
+                        </div>
+                    </div>
+                    
+                    <hr class="my-4">
+                    
+                    <h6><i class="bi bi-shield-lock me-2"></i>Change Password</h6>
+                    <p class="text-muted">Leave password fields blank to keep your current password.</p>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="current_password" class="form-label">Current Password</label>
+                            <input type="password" class="form-control" id="current_password" name="current_password">
+                            <div class="form-text">Required only if changing password</div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="new_password" class="form-label">New Password</label>
+                            <input type="password" class="form-control" id="new_password" name="new_password" minlength="6">
+                            <div class="form-text">Minimum 6 characters</div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-end gap-2">
+                        <a href="{{ url_for('profile') }}" class="btn btn-outline-secondary">Cancel</a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-lg me-1"></i>Update Profile
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

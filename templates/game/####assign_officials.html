@@ -1,0 +1,269 @@
+{% extends "base.html" %}
+
+{% block title %}Assign Officials - {{ game.game_title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-12">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2><i class="bi bi-person-plus-fill me-2"></i>Assign Officials</h2>
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb">
+                            <li class="breadcrumb-item"><a href="{{ url_for('index') }}">Dashboard</a></li>
+                            <li class="breadcrumb-item"><a href="{{ url_for('game.manage_games') }}">Game Management</a></li>
+                            <li class="breadcrumb-item active">Assign Officials</li>
+                        </ol>
+                    </nav>
+                </div>
+                <div>
+                    <a href="{{ url_for('game.manage_games') }}" class="btn btn-secondary">
+                        <i class="bi bi-arrow-left me-1"></i>Back to Games
+                    </a>
+                </div>
+            </div>
+
+            <!-- Game Information Card -->
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-calendar-event me-2"></i>Game Details</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="fw-bold">{{ game.game_title }}</h6>
+                            <p class="mb-2">
+                                <strong>Date:</strong> {{ game.date.strftime('%A, %B %d, %Y') }}<br>
+                                <strong>Time:</strong> {{ game.time.strftime('%I:%M %p') }}
+                                {% if game.estimated_duration %}
+                                <span class="text-muted">({{ game.estimated_duration }} min)</span>
+                                {% endif %}
+                            </p>
+                            <p class="mb-2">
+                                <strong>League:</strong> {{ game.league.name }}
+                                {% if game.level %}
+                                <span class="badge bg-info">{{ game.level }}</span>
+                                {% endif %}
+                            </p>
+                        </div>
+                        <div class="col-md-6">
+                            <p class="mb-2">
+                                <strong>Location:</strong> {{ game.location.name }}
+                                {% if game.field_name %}<br><strong>Field:</strong> {{ game.field_name }}{% endif %}
+                                {% if game.location.full_address %}
+                                <br><small class="text-muted">{{ game.location.full_address }}</small>
+                                {% endif %}
+                            </p>
+                            <p class="mb-2">
+                                <strong>Status:</strong> 
+                                <span class="badge bg-{{ 'secondary' if game.status == 'draft' else 'warning' if game.status == 'ready' else 'info' if game.status == 'released' else 'success' }}">
+                                    {{ game.status.title() }}
+                                </span>
+                            </p>
+                            {% if game.fee_per_official %}
+                            <p class="mb-2">
+                                <strong>Fee per Official:</strong> 
+                                <span class="text-success">${{ "%.2f"|format(game.fee_per_official) }}</span>
+                            </p>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    {% if game.notes or game.special_instructions %}
+                    <hr>
+                    <div class="row">
+                        {% if game.notes %}
+                        <div class="col-md-6">
+                            <p class="mb-0"><strong>Notes:</strong></p>
+                            <p class="text-muted">{{ game.notes }}</p>
+                        </div>
+                        {% endif %}
+                        {% if game.special_instructions %}
+                        <div class="col-md-6">
+                            <p class="mb-0"><strong>Special Instructions:</strong></p>
+                            <p class="text-muted">{{ game.special_instructions }}</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="row">
+                <!-- Current Assignments -->
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header bg-success text-white">
+                            <h5 class="mb-0">
+                                <i class="bi bi-people-fill me-2"></i>
+                                Current Assignments ({{ current_assignments|length }})
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            {% if current_assignments %}
+                                {% for assignment in current_assignments %}
+                                <div class="d-flex justify-content-between align-items-center border-bottom py-2">
+                                    <div>
+                                        <strong>{{ assignment.user.full_name }}</strong>
+                                        {% if assignment.position %}
+                                        <br><small class="text-muted">{{ assignment.position }}</small>
+                                        {% endif %}
+                                        <br><small class="text-info">
+                                            Status: {{ assignment.status.title() }}
+                                            {% if assignment.response_date %}
+                                            ({{ assignment.response_date.strftime('%m/%d %I:%M%p') }})
+                                            {% endif %}
+                                        </small>
+                                    </div>
+                                    <div>
+                                        <form method="POST" action="{{ url_for('game.remove_assignment', assignment_id=assignment.id) }}" class="d-inline">
+                                            <button type="submit" class="btn btn-sm btn-outline-danger" 
+                                                    onclick="return confirm('Remove {{ assignment.user.full_name }} from this assignment?')">
+                                                <i class="bi bi-x-circle"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            {% else %}
+                                <p class="text-muted text-center py-3">
+                                    <i class="bi bi-person-x me-2"></i>No officials assigned yet
+                                </p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Add Assignment -->
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header bg-info text-white">
+                            <h5 class="mb-0">
+                                <i class="bi bi-person-plus me-2"></i>Assign Official
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <form method="POST" action="{{ url_for('game.assign_official_to_game', game_id=game.id) }}">
+                                <div class="mb-3">
+                                    <label for="user_id" class="form-label">Select Official</label>
+                                    <select name="user_id" id="user_id" class="form-select" required>
+                                        <option value="">Choose an official...</option>
+                                        {% for official in available_officials %}
+                                        <option value="{{ official.id }}">
+                                            {{ official.full_name }} ({{ official.role.title() }})
+                                            {% if official.email %}
+                                            - {{ official.email }}
+                                            {% endif %}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="position" class="form-label">Position (Optional)</label>
+                                    <input type="text" name="position" id="position" class="form-control" 
+                                           placeholder="e.g., Referee, Umpire, Linesman">
+                                </div>
+                                
+                                <div class="d-grid">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="bi bi-person-plus me-2"></i>Assign Official
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Auto-Assignment Option -->
+                    {% if available_officials|length >= 2 %}
+                    <div class="card mt-3">
+                        <div class="card-header bg-warning text-dark">
+                            <h6 class="mb-0">
+                                <i class="bi bi-magic me-2"></i>Auto-Assignment
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <p class="small text-muted mb-2">
+                                Automatically assign officials based on rankings and availability.
+                            </p>
+                            <form method="POST" action="{{ url_for('game.auto_assign_officials', game_id=game.id) }}">
+                                <div class="mb-2">
+                                    <label for="num_officials" class="form-label small">Number of Officials</label>
+                                    <select name="num_officials" id="num_officials" class="form-select form-select-sm">
+                                        <option value="1">1 Official</option>
+                                        <option value="2" selected>2 Officials</option>
+                                        <option value="3">3 Officials</option>
+                                    </select>
+                                </div>
+                                <div class="d-grid">
+                                    <button type="submit" class="btn btn-warning btn-sm">
+                                        <i class="bi bi-magic me-1"></i>Auto-Assign
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Available Officials Info -->
+            {% if available_officials %}
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="bi bi-info-circle me-2"></i>
+                        Available Officials ({{ available_officials|length }})
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% for official in available_officials[:6] %}
+                        <div class="col-md-4 mb-2">
+                            <small>
+                                <strong>{{ official.full_name }}</strong><br>
+                                <span class="text-muted">{{ official.role.title() }}</span>
+                                {% if official.phone %}
+                                <br><span class="text-muted">{{ official.phone }}</span>
+                                {% endif %}
+                            </small>
+                        </div>
+                        {% endfor %}
+                        {% if available_officials|length > 6 %}
+                        <div class="col-12">
+                            <small class="text-muted">... and {{ available_officials|length - 6 }} more officials</small>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <div class="alert alert-warning mt-4">
+                <i class="bi bi-exclamation-triangle me-2"></i>
+                <strong>No available officials found.</strong> 
+                Make sure you have users with official, assigner, administrator, or superadmin roles.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Auto-refresh assignment status every 30 seconds
+setInterval(function() {
+    // Only refresh if the page is visible
+    if (!document.hidden) {
+        location.reload();
+    }
+}, 30000);
+
+// Confirm removal of assignments
+function confirmRemoval(officialName) {
+    return confirm('Are you sure you want to remove ' + officialName + ' from this assignment?');
+}
+</script>
+{% endblock %}

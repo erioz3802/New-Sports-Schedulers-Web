@@ -1,0 +1,352 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Sports Scheduler{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1>Welcome, {{ user.first_name }}!</h1>
+        <p class="text-muted">Role: {{ user.role.title() }}</p>
+    </div>
+</div>
+
+{% if user.can_manage_users or user.role in ['assigner'] %}
+<!-- Statistics Cards for Managers -->
+<div class="row mb-4">
+    {% if user.can_manage_users %}
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body text-center">
+                <i class="bi bi-people-fill display-4 text-primary"></i>
+                <h3 class="mt-2">{{ total_users or 0 }}</h3>
+                <p class="text-muted mb-0">Total Users</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body text-center">
+                <i class="bi bi-trophy-fill display-4 text-success"></i>
+                <h3 class="mt-2">{{ total_leagues or 0 }}</h3>
+                <p class="text-muted mb-0">Leagues</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- NEW: Location Statistics Card -->
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body text-center">
+                <i class="bi bi-geo-alt-fill display-4 text-warning"></i>
+                <h3 class="mt-2">{{ total_locations or 0 }}</h3>
+                <p class="text-muted mb-0">Locations</p>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    {% if user.role in ['assigner', 'administrator', 'superadmin'] %}
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body text-center">
+                <i class="bi bi-calendar-event display-4 text-info"></i>
+                <h3 class="mt-2">{{ total_games or 0 }}</h3>
+                <p class="text-muted mb-0">Total Games</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body text-center">
+                <i class="bi bi-exclamation-triangle display-4 text-warning"></i>
+                <h3 class="mt-2">{{ unassigned_games or 0 }}</h3>
+                <p class="text-muted mb-0">Unassigned</p>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+{% if user.role in ['assigner', 'administrator', 'superadmin'] and (draft_games or ready_games or released_games) %}
+<!-- Game Status Overview -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-light">
+                <h5 class="mb-0"><i class="bi bi-bar-chart me-2"></i>Game Status Overview</h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-md-3">
+                        <h4 class="text-secondary">{{ draft_games or 0 }}</h4>
+                        <p class="text-muted">Draft Games</p>
+                    </div>
+                    <div class="col-md-3">
+                        <h4 class="text-warning">{{ ready_games or 0 }}</h4>
+                        <p class="text-muted">Ready for Release</p>
+                    </div>
+                    <div class="col-md-3">
+                        <h4 class="text-info">{{ released_games or 0 }}</h4>
+                        <p class="text-muted">Released</p>
+                    </div>
+                    <div class="col-md-3">
+                        <h4 class="text-danger">{{ unassigned_games or 0 }}</h4>
+                        <p class="text-muted">Need Officials</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endif %}
+
+<!-- Main Action Cards -->
+<div class="row mt-4">
+    {% if user.can_manage_users %}
+    <div class="col-md-3 mb-3">
+        <div class="card h-100">
+            <div class="card-body text-center">
+                <i class="bi bi-people-fill display-4 text-primary"></i>
+                <h5 class="mt-2">User Management</h5>
+                <p class="text-muted">Manage users and roles</p>
+                <a href="{{ url_for('admin.dashboard') }}" class="btn btn-outline-primary">View Dashboard</a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-3">
+        <div class="card h-100">
+            <div class="card-body text-center">
+                <i class="bi bi-trophy-fill display-4 text-success"></i>
+                <h5 class="mt-2">League Management</h5>
+                <p class="text-muted">Manage leagues and settings</p>
+                <a href="{{ url_for('league.dashboard') }}" class="btn btn-outline-success">View Dashboard</a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- NEW: Location Management Card -->
+    <div class="col-md-3 mb-3">
+        <div class="card h-100">
+            <div class="card-body text-center">
+                <i class="bi bi-geo-alt-fill display-4 text-warning"></i>
+                <h5 class="mt-2">Location Management</h5>
+                <p class="text-muted">Manage venues and facilities</p>
+                <a href="{{ url_for('league.manage_locations') }}" class="btn btn-outline-warning">Manage Locations</a>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    {% if user.role in ['assigner', 'administrator', 'superadmin'] %}
+    <div class="col-md-3 mb-3">
+        <div class="card h-100">
+            <div class="card-body text-center">
+                <i class="bi bi-calendar-event display-4 text-info"></i>
+                <h5 class="mt-2">Game Management</h5>
+                <p class="text-muted">Schedule games and assign officials</p>
+                <a href="{{ url_for('game.dashboard') }}" class="btn btn-outline-info">View Dashboard</a>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    {% if user.role == 'official' %}
+    <div class="col-md-4 mb-3">
+        <div class="card h-100">
+            <div class="card-body text-center">
+                <i class="bi bi-person-badge display-4 text-primary"></i>
+                <h5 class="mt-2">My Assignments</h5>
+                <p class="text-muted">View your game assignments</p>
+                <a href="#" class="btn btn-outline-primary">Coming Soon</a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4 mb-3">
+        <div class="card h-100">
+            <div class="card-body text-center">
+                <i class="bi bi-calendar-check display-4 text-success"></i>
+                <h5 class="mt-2">Availability</h5>
+                <p class="text-muted">Manage your availability</p>
+                <a href="#" class="btn btn-outline-success">Coming Soon</a>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    <div class="col-md-{% if user.role == 'official' %}4{% else %}3{% endif %} mb-3">
+        <div class="card h-100">
+            <div class="card-body text-center">
+                <i class="bi bi-graph-up display-4 text-info"></i>
+                <h5 class="mt-2">Reports</h5>
+                <p class="text-muted">View analytics and financial reports</p>
+                <a href="{{ url_for('report.dashboard') }}" class="btn btn-outline-info">View Reports</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if recent_games %}
+<!-- Recent Games -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-light">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="bi bi-clock-history me-2"></i>Recent Games</h5>
+                    {% if user.role in ['assigner', 'administrator', 'superadmin'] %}
+                    <a href="{{ url_for('game.manage_games') }}" class="btn btn-outline-primary btn-sm">View All Games</a>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Game</th>
+                                <th>Date & Time</th>
+                                <th>Location</th>
+                                <th>Status</th>
+                                <th>Officials</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for game in recent_games %}
+                            <tr>
+                                <td>
+                                    <strong>{{ game.game_title }}</strong>
+                                    <br><small class="text-muted">{{ game.league.full_name }}</small>
+                                </td>
+                                <td>
+                                    {{ game.date.strftime('%m/%d/%Y') }}
+                                    <br><small class="text-muted">{{ game.time.strftime('%I:%M %p') }}</small>
+                                </td>
+                                <td>
+                                    {{ game.location.name }}
+                                    {% if game.field_name %}
+                                    <br><small class="text-muted">{{ game.field_name }}</small>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="badge bg-{{ 'secondary' if game.status == 'draft' else 'warning' if game.status == 'ready' else 'info' if game.status == 'released' else 'success' }}">
+                                        {{ game.status.title() }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {{ game.assigned_officials_count }} assigned
+                                    {% if game.assigned_officials_count == 0 and game.status == 'released' %}
+                                    <br><small class="text-danger">Needs officials</small>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% if user.role in ['assigner', 'administrator', 'superadmin'] and unassigned_games and unassigned_games > 0 %}
+<!-- Unassigned Games Alert -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="alert alert-warning">
+            <h5><i class="bi bi-exclamation-triangle me-2"></i>Action Required</h5>
+            <p class="mb-2">You have <strong>{{ unassigned_games }}</strong> released game(s) that still need official assignments.</p>
+            <a href="{{ url_for('game.manage_games') }}?status=released" class="btn btn-warning btn-sm">
+                <i class="bi bi-person-plus me-1"></i>Assign Officials
+            </a>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Quick Actions for Different Roles -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="bi bi-lightning-fill me-2"></i>Quick Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    {% if user.can_manage_users %}
+                    <div class="col-md-3 mb-3">
+                        <div class="d-grid">
+                            <a href="{{ url_for('admin.add_user') }}" class="btn btn-outline-primary">
+                                <i class="bi bi-person-plus me-2"></i>Add User
+                            </a>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="d-grid">
+                            <a href="{{ url_for('league.add_league') }}" class="btn btn-outline-success">
+                                <i class="bi bi-trophy me-2"></i>Add League
+                            </a>
+                        </div>
+                    </div>
+                    <!-- NEW: Add Location Quick Action -->
+                    <div class="col-md-3 mb-3">
+                        <div class="d-grid">
+                            <a href="{{ url_for('league.add_location') }}" class="btn btn-outline-warning">
+                                <i class="bi bi-geo-alt-fill me-2"></i>Add Location
+                            </a>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if user.role in ['assigner', 'administrator', 'superadmin'] %}
+                    <div class="col-md-3 mb-3">
+                        <div class="d-grid">
+                            <a href="{{ url_for('game.add_game') }}" class="btn btn-outline-info">
+                                <i class="bi bi-calendar-plus me-2"></i>Add Game
+                            </a>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="d-grid">
+                            <a href="{{ url_for('game.manage_games') }}?status=draft" class="btn btn-outline-secondary">
+                                <i class="bi bi-pencil-square me-2"></i>Draft Games
+                            </a>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if user.role == 'official' %}
+                    <div class="col-md-3 mb-3">
+                        <div class="d-grid">
+                            <a href="#" class="btn btn-outline-primary">
+                                <i class="bi bi-calendar-event me-2"></i>My Schedule
+                            </a>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="d-grid">
+                            <a href="#" class="btn btn-outline-success">
+                                <i class="bi bi-calendar-x me-2"></i>Set Unavailable
+                            </a>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="col-md-3 mb-3">
+                        <div class="d-grid">
+                            <a href="{{ url_for('profile') }}" class="btn btn-outline-dark">
+                                <i class="bi bi-person-gear me-2"></i>My Profile
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

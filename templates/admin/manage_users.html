@@ -1,0 +1,225 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Users - Sports Scheduler{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1><i class="bi bi-people me-2"></i>Manage Users</h1>
+            <a href="{{ url_for('admin.add_user') }}" class="btn btn-primary">
+                <i class="bi bi-person-plus me-1"></i>Add New User
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Search and Filter -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <form method="GET" class="row g-3">
+                    <div class="col-md-4">
+                        <label for="search" class="form-label">Search</label>
+                        <input type="text" class="form-control" id="search" name="search" 
+                               value="{{ search }}" placeholder="Name or email...">
+                    </div>
+                    <div class="col-md-3">
+                        <label for="role" class="form-label">Role</label>
+                        <select class="form-select" id="role" name="role">
+                            <option value="">All Roles</option>
+                            <option value="superadmin" {{ 'selected' if role_filter == 'superadmin' }}>Superadmin</option>
+                            <option value="administrator" {{ 'selected' if role_filter == 'administrator' }}>Administrator</option>
+                            <option value="assigner" {{ 'selected' if role_filter == 'assigner' }}>Assigner</option>
+                            <option value="official" {{ 'selected' if role_filter == 'official' }}>Official</option>
+                            <option value="viewer" {{ 'selected' if role_filter == 'viewer' }}>Viewer</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="status" class="form-label">Status</label>
+                        <select class="form-select" id="status" name="status">
+                            <option value="">All Status</option>
+                            <option value="active" {{ 'selected' if status_filter == 'active' }}>Active</option>
+                            <option value="inactive" {{ 'selected' if status_filter == 'inactive' }}>Inactive</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">&nbsp;</label>
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-outline-primary">Filter</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Users Table -->
+<div class="row">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                {% if users.items %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Role</th>
+                                <th>Status</th>
+                                <th>Created</th>
+                                <th>Last Login</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for user in users.items %}
+                            <tr>
+                                <td>
+                                    <strong>{{ user.full_name }}</strong>
+                                    {% if user.phone %}
+                                    <br><small class="text-muted">{{ user.phone }}</small>
+                                    {% endif %}
+                                </td>
+                                <td>{{ user.email }}</td>
+                                <td>
+                                    <span class="badge bg-{{ 'danger' if user.role == 'superadmin' else 'primary' if user.role == 'administrator' else 'success' if user.role == 'assigner' else 'info' if user.role == 'official' else 'secondary' }}">
+                                        {{ user.role.title() }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="badge bg-{{ 'success' if user.is_active else 'secondary' }}">
+                                        {{ 'Active' if user.is_active else 'Inactive' }}
+                                    </span>
+                                </td>
+                                <td>{{ user.created_at.strftime('%m/%d/%Y') if user.created_at else 'Unknown' }}</td>
+                                <td>{{ user.last_login.strftime('%m/%d/%Y') if user.last_login else 'Never' }}</td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <!-- Edit Button -->
+                                        <a href="{{ url_for('admin.edit_user', user_id=user.id) }}" 
+                                           class="btn btn-outline-primary" title="Edit">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+        
+                                        <!-- Status Toggle Button -->
+                                        {% if user.id != current_user.id %}
+                                        <form method="POST" action="{{ url_for('admin.toggle_user_status', user_id=user.id) }}" 
+                                              class="d-inline">
+                                            <button type="submit" class="btn btn-outline-{{ 'warning' if user.is_active else 'success' }}"
+                                                    title="{{ 'Deactivate' if user.is_active else 'Activate' }}"
+                                                    onclick="return confirm('{{ 'Deactivate' if user.is_active else 'Activate' }} this user?')">
+                                                <i class="bi bi-{{ 'pause' if user.is_active else 'play' }}"></i>
+                                            </button>
+                                        </form>
+                                        
+                                        <!-- Delete Button (Superadmin only, can't delete self) -->
+                                        {% if current_user.is_superadmin %}
+                                            <button type="button" 
+                                                    class="btn btn-outline-danger delete-user-btn"
+                                                    title="Delete User"
+                                                    data-user-id="{{ user.id }}"
+                                                    data-user-name="{{ user.full_name }}"
+                                                    data-user-email="{{ user.email }}">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        {% endif %}
+                                        
+                                        {% else %}
+                                        <span class="text-muted small">Self</span>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="bi bi-people display-1 text-muted"></i>
+                    <h4 class="mt-3">No users found</h4>
+                    <p class="text-muted">Try adjusting your search criteria or add a new user.</p>
+                    <a href="{{ url_for('admin.add_user') }}" class="btn btn-primary">Add First User</a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete User Confirmation Modal -->
+<div class="modal fade" id="deleteUserModal" tabindex="-1" aria-labelledby="deleteUserModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="deleteUserModalLabel">
+                    <i class="bi bi-exclamation-triangle"></i> Confirm User Deletion
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-warning">
+                    <strong>Warning:</strong> This action cannot be undone!
+                </div>
+                <p>Are you sure you want to delete the following user?</p>
+                <div class="user-details bg-light p-3 rounded">
+                    <strong id="deleteUserName"></strong><br>
+                    <small class="text-muted" id="deleteUserEmail"></small>
+                </div>
+                <p class="text-danger mt-3">
+                    <strong>This will permanently remove:</strong>
+                </p>
+                <ul class="text-danger">
+                    <li>User account and profile information</li>
+                    <li>All game assignments (if any)</li>
+                    <li>Assignment history and records</li>
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x"></i> Cancel
+                </button>
+                <form id="deleteUserForm" method="POST" style="display: inline;">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-trash"></i> Delete User Permanently
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const deleteButtons = document.querySelectorAll('.delete-user-btn');
+    const deleteModal = document.getElementById('deleteUserModal');
+    const deleteForm = document.getElementById('deleteUserForm');
+    const userNameElement = document.getElementById('deleteUserName');
+    const userEmailElement = document.getElementById('deleteUserEmail');
+
+    deleteButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const userId = this.dataset.userId;
+            const userName = this.dataset.userName;
+            const userEmail = this.dataset.userEmail;
+
+            // Update modal content
+            userNameElement.textContent = userName;
+            userEmailElement.textContent = userEmail;
+
+            // Update form action
+            deleteForm.action = `/admin/users/${userId}/delete`;
+
+            // Show modal
+            const modal = new bootstrap.Modal(deleteModal);
+            modal.show();
+        });
+    });
+});
+</script>
+{% endblock %}

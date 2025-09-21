@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Assignments - Sports Scheduler</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .assignment-card {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            transition: all 0.3s ease;
+            border-left: 5px solid #007bff;
+        }
+        
+        .assignment-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+        }
+        
+        .assignment-card.pending {
+            border-left-color: #ffc107;
+            background: #fffef7;
+        }
+        
+        .assignment-card.accepted {
+            border-left-color: #28a745;
+            background: #f8fff9;
+        }
+        
+        .assignment-card.declined {
+            border-left-color: #dc3545;
+            background: #fff8f8;
+        }
+        
+        .assignment-header {
+            padding: 20px 20px 10px 20px;
+            border-bottom: 1px solid #dee2e6;
+        }
+        
+        .assignment-body {
+            padding: 20px;
+        }
+        
+        .status-badge {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 0.85rem;
+        }
+        
+        .status-pending {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+        
+        .status-accepted {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .status-declined {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .game-details {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        
+        .game-detail-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        
+        .game-detail-item:last-child {
+            margin-bottom: 0;
+        }
+        
+        .game-detail-icon {
+            width: 20px;
+            color: #6c757d;
+            margin-right: 10px;
+        }
+        
+        .partner-info {
+            background: #e7f3ff;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .action-buttons.responded {
+            justify-content: center;
+        }
+        
+        .response-note {
+            background: #f1f3f4;
+            border-radius: 6px;
+            padding: 10px;
+            margin-top: 10px;
+            font-style: italic;
+        }
+        
+        .assignment-summary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 10px;
+            padding: 25px;
+            margin-bottom: 25px;
+        }
+        
+        .summary-stat {
+            text-align: center;
+        }
+        
+        .summary-number {
+            font-size: 2rem;
+            font-weight: bold;
+            display: block;
+        }
+        
+        .summary-label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+        
+        .filters {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #6c757d;
+        }
+        
+        .empty-state i {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+        
+        .response-deadline {
+            color: #dc3545;
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+        
+        .response-deadline.warning {
+            color: #ffc107;
+        }
+        
+        .response-deadline.safe {
+            color: #28a745;
+        }
+        
+        .map-link {
+            color: #007bff;
+            text-decoration: none;
+        }
+        
+        .map-link:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    {% extends "base.html" %}
+    {% block title %}My Assignments{% endblock %}
+    
+    {% block content %}
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-12">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2><i class="fas fa-clipboard-list text-primary"></i> My Assignments</h2>
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-outline-primary" onclick="exportAssignments()">
+                            <i class="fas fa-download"></i> Export
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary" onclick="printSchedule()">
+                            <i class="fas fa-print"></i> Print
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Assignment Summary -->
+                <div class="assignment-summary">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="summary-stat">
+                                <span class="summary-number" id="total-assignments">0</span>
+                                <span class="summary-label">Total Assignments</span>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="summary-stat">
+                                <span class="summary-number" id="pending-assignments">0</span>
+                                <span class="summary-label">Pending Response</span>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="summary-stat">
+                                <span class="summary-number" id="accepted-assignments">0</span>
+                                <span class="summary-label">Accepted</span>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="summary-stat">
+                                <span class="summary-number" id="upcoming-games">0</span>
+                                <span class="summary-label">Upcoming Games</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Filters -->
+                <div class="filters">
+                    <div class="row align-items-center">
+                        <div class="col-md-3">
+                            <label class="form-label">Status Filter:</label>
+                            <select class="form-select" id="status-filter" onchange="filterAssignments()">
+                                <option value="">All Statuses</option>
+                                <option value="pending">Pending Response</option>
+                                <option value="accepted">Accepted</option>
+                                <option value="declined">Declined</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Date Range:</label>
+                            <select class="form-select" id="date-filter" onchange="filterAssignments()">
+                                <option value="">All Dates</option>
+                                <option value="upcoming">Upcoming Only</option>
+                                <option value="this-week">This Week</option>
+                                <option value="this-month">This Month</option>
+                                <option value="past">Past Games</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">League:</label>
+                            <select class="form-select" id="league-filter" onchange="filterAssignments()">
+                                <option value="">All Leagues</option>
+                                <!-- Will be populated by JavaScript -->
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Search:</label>
+                            <input type="text" class="form-control" id="search-filter" placeholder="Search teams, locations..." onkeyup="filterAssignments()">
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Assignments List -->
+                <div id="assignments-container">
+                    <!-- Will be populated by JavaScript -->
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Assignment Response Modal -->
+    <div class="modal fade" id="responseModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="response-modal-title">Respond to Assignment</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="response-game-details"></div>
+                    
+                    <div class="form-group mb-3">
+                        <label class="form-label">Response:</label>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="response" id="response-accept" value="accepted">
+                            <label class="form-check-label" for="response-accept">
+                                <i class="fas fa-check text-success"></i> Accept Assignment
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="response" id="response-decline" value="declined">
+                            <label class="form-check-label" for="response-decline">
+                                <i class="fas fa-times text-danger"></i> Decline Assignment
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group mb-3">
+                        <label class="form-label">Notes (Optional):</label>
+                        <textarea class="form-control" id="response-notes" rows="3" placeholder="Add any notes about your response..."></textarea>
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i> 
+                        <strong>Please respond as soon as possible.</strong> 
+                        Late responses may affect future assignment opportunities.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="submitResponse()">Submit Response</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let assignmentsData = [];
+        let currentAssignmentId = null;
+        
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            loadAssignments();
+        });
+        
+        function loadAssignments() {
+            // Show loading state
+            document.getElementById('assignments-container').innerHTML = `
+                <div class="text-center py-5">
+                    <div class="spinner-border text-primary" role="status"></div>
+                    <h5 class="text-muted mt-3">Loading your assignments...</h5>
+                </div>
+            `;
+            
+            // Fetch assignments data
+            fetch('/game/official/assignments/data')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        assignmentsData = data.assignments;
+                        populateLeagueFilter(data.leagues);
+                        displayAssignments(assignmentsData);
+                        updateSummary(assignmentsData);
+                    } else {
+                        showError('Error loading assignments: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showError('Error loading assignments');
+                });
+        }
+        
+        function populateLeagueFilter(leagues) {
+            const leagueFilter = document.getElementById('league-filter');
+            
+            // Clear existing options (except "All Leagues")
+            while (leagueFilter.children.length > 1) {
+                leagueFilter.removeChild(leagueFilter.lastChild);
+            }
+            
+            // Add league options
+            leagues.forEach(league => {
+                const option = document.createElement('option');
+                option.value = league.id;
+                option.textContent = `${league.name} (${league.level})`;
+                leagueFilter.appendChild(option);
+            });
+        }
+        
+        function displayAssignments(assignments) {
+            const container = document.getElementById('assignments-container');
+            
+            if (assignments.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-clipboard-list"></i>
+                        <h5>No assignments found</h5>
+                        <p>You don't have any assignments matching the current filters.</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            // Sort assignments by date (upcoming first)
+            assignments.sort((a, b) => new Date(a.game.date + ' ' + a.game.time) - new Date(b.game.date + ' ' + b.game.time));
+            
+            let html = '';
+            
+            assignments.forEach(assignment => {
+                const game = assignment.game;
+                const gameDateTime = new Date(game.date + ' ' + game.time);
+                const now = new Date();
+                const isUpcoming = gameDateTime > now;
+                const daysDiff = Math.ceil((gameDateTime - now) / (1000 * 60 * 60 * 24));
+                
+                // Response deadline info
+                let deadlineInfo = '';
+                if (assignment.status === 'pending') {
+                    if (daysDiff <= 1) {
+                        deadlineInfo = '<span class="response-deadline">Response needed ASAP!</span>';
+                    } else if (daysDiff <= 3) {
+                        deadlineInfo = '<span class="response-deadline warning">Please respond soon</span>';
+                    } else {
+                        deadlineInfo = '<span class="response-deadline safe">Response requested</span>';
+                    }
+                }
+                
+                // Partners info (FIXED VERSION)
+                let partnersHtml = '';
+                if (assignment.partners && assignment.partners.length > 0) {
+                    partnersHtml = `
+                        <div class="partner-info">
+                            <h6><i class="fas fa-users"></i> Partner Officials:</h6>
+                            ${assignment.partners.map(partner => `
+                                <div class="d-flex justify-content-between align-items-center mb-2 p-2 bg-light rounded">
+                                    <div>
+                                        <strong>${partner.name}</strong>
+                                        ${partner.position ? ` (${partner.position})` : ' (Official)'}
+                                        <br>
+                                        <small class="text-muted">
+                                            <i class="fas fa-envelope me-1"></i>
+                                            <a href="mailto:${partner.email}" class="text-decoration-none">${partner.email}</a>
+                                            ${partner.phone ? `<br><i class="fas fa-phone me-1"></i><a href="tel:${partner.phone}" class="text-decoration-none">${partner.phone}</a>` : ''}
+                                        </small>
+                                        <br>
+                                        <span class="badge bg-${partner.status === 'accepted' ? 'success' : partner.status === 'declined' ? 'danger' : 'warning'} mt-1">
+                                            ${partner.status.toUpperCase()}
+                                        </span>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    `;
+                }
+                
+                // Action buttons
+                let actionButtons = '';
+                if (assignment.status === 'assigned') {
+                    actionButtons = `
+                        <div class="action-buttons">
+                            <button class="btn btn-success flex-fill" onclick="quickAccept(${assignment.id})">
+                                <i class="fas fa-check"></i> Accept
+                            </button>
+                            <button class="btn btn-danger flex-fill" onclick="quickDecline(${assignment.id})">
+                                <i class="fas fa-times"></i> Decline
+                            </button>
+                            <button class="btn btn-outline-primary" onclick="openResponseModal(${assignment.id})">
+                                <i class="fas fa-comment"></i> Add Notes
+                            </button>
+                        </div>
+                        ${deadlineInfo}
+                    `;
+                } else {
+                    const statusText = assignment.status === 'accepted' ? 'Accepted' : 'Declined';
+                    const statusIcon = assignment.status === 'accepted' ? 'check-circle' : 'times-circle';
+                    actionButtons = `
+                        <div class="action-buttons responded">
+                            <span class="btn btn-outline-secondary disabled">
+                                <i class="fas fa-${statusIcon}"></i> ${statusText}
+                            </span>
+                        </div>
+                        ${assignment.response_notes ? `<div class="response-note"><strong>Your notes:</strong> ${assignment.response_notes}</div>` : ''}
+                    `;
+                }
+                
+                html += `
+                    <div class="assignment-card ${assignment.status}" data-assignment="${assignment.id}" data-league="${game.league.id}" data-date="${game.date}">
+                        <div class="assignment-header">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h5 class="mb-2">${game.home_team} vs ${game.away_team}</h5>
+                                    <span class="status-badge status-${assignment.status}">${assignment.status.toUpperCase()}</span>
+                                </div>
+                                <div class="text-end">
+                                    <div class="h6 mb-1">${formatDate(game.date)}</div>
+                                    <div class="text-muted">${formatTime(game.time)}</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="assignment-body">
+                            <div class="game-details">
+                                <div class="game-detail-item">
+                                    <i class="fas fa-trophy game-detail-icon"></i>
+                                    <span><strong>${game.league.name}</strong> (${game.league.level})</span>
+                                </div>
+                                <div class="game-detail-item">
+                                    <i class="fas fa-map-marker-alt game-detail-icon"></i>
+                                    <span>
+                                        <a href="https://maps.google.com/?q=${encodeURIComponent(game.location.address)}" target="_blank" class="map-link">
+                                            ${game.location.name}
+                                        </a>
+                                        ${game.location.field ? ` - ${game.location.field}` : ''}
+                                    </span>
+                                </div>
+                                <div class="game-detail-item">
+                                    <i class="fas fa-dollar-sign game-detail-icon"></i>
+                                    <span>Fee: $${(game.fee_per_official || game.league.game_fee || 50).toFixed(2)}</span>
+                                </div>
+                                ${game.notes ? `
+                                    <div class="game-detail-item">
+                                        <i class="fas fa-sticky-note game-detail-icon"></i>
+                                        <span>${game.notes}</span>
+                                    </div>
+                                ` : ''}
+                                <div class="game-detail-item">
+                                    <i class="fas fa-clock game-detail-icon"></i>
+                                    <span>${isUpcoming ? `${daysDiff} days away` : 'Past game'}</span>
+                                </div>
+                            </div>
+                            
+                            ${partnersHtml}
+                            ${actionButtons}
+                        </div>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+        }
+        
+        function updateSummary(assignments) {
+            const total = assignments.length;
+            const pending = assignments.filter(a => a.status === 'pending').length;
+            const accepted = assignments.filter(a => a.status === 'accepted').length;
+            const upcoming = assignments.filter(a => {
+                const gameDate = new Date(a.game.date + ' ' + a.game.time);
+                return gameDate > new Date() && a.status === 'accepted';
+            }).length;
+            
+            document.getElementById('total-assignments').textContent = total;
+            document.getElementById('pending-assignments').textContent = pending;
+            document.getElementById('accepted-assignments').textContent = accepted;
+            document.getElementById('upcoming-games').textContent = upcoming;
+        }
+        
+        function filterAssignments() {
+            const statusFilter = document.getElementById('status-filter').value;
+            const dateFilter = document.getElementById('date-filter').value;
+            const leagueFilter = document.getElementById('league-filter').value;
+            const searchFilter = document.getElementById('search-filter').value.toLowerCase();
+            
+            let filteredAssignments = assignmentsData.filter(assignment => {
+                // Status filter
+                if (statusFilter && assignment.status !== statusFilter) {
+                    return false;
+                }
+                
+                // League filter
+                if (leagueFilter && assignment.game.league.id.toString() !== leagueFilter) {
+                    return false;
+                }
+                
+                // Date filter
+                const gameDate = new Date(assignment.game.date + ' ' + assignment.game.time);
+                const now = new Date();
+                
+                if (dateFilter === 'upcoming' && gameDate <= now) {
+                    return false;
+                }
+                if (dateFilter === 'past' && gameDate > now) {
+                    return false;
+                }
+                if (dateFilter === 'this-week') {
+                    const weekFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+                    if (gameDate < now || gameDate > weekFromNow) {
+                        return false;
+                    }
+                }
+                if (dateFilter === 'this-month') {
+                    const monthFromNow = new Date(now.getFullYear(), now.getMonth() + 1, now.getDate());
+                    if (gameDate < now || gameDate > monthFromNow) {
+                        return false;
+                    }
+                }
+                
+                // Search filter
+                if (searchFilter) {
+                    const searchText = `${assignment.game.home_team} ${assignment.game.away_team} ${assignment.game.location.name}`.toLowerCase();
+                    if (!searchText.includes(searchFilter)) {
+                        return false;
+                    }
+                }
+                
+                return true;
+            });
+            
+            displayAssignments(filteredAssignments);
+        }
+        
+        function quickAccept(assignmentId) {
+            submitAssignmentResponse(assignmentId, 'accepted', '');
+        }
+        
+        function quickDecline(assignmentId) {
+            if (confirm('Are you sure you want to decline this assignment?')) {
+                submitAssignmentResponse(assignmentId, 'declined', '');
+            }
+        }
+        
+        function openResponseModal(assignmentId) {
+            currentAssignmentId = assignmentId;
+            const assignment = assignmentsData.find(a => a.id === assignmentId);
+            
+            if (!assignment) return;
+            
+            // Update modal content
+            document.getElementById('response-modal-title').textContent = 
+                `Respond to Assignment - ${assignment.game.home_team} vs ${assignment.game.away_team}`;
+            
+            document.getElementById('response-game-details').innerHTML = `
+                <div class="game-details">
+                    <div class="game-detail-item">
+                        <i class="fas fa-calendar game-detail-icon"></i>
+                        <span>${formatDate(assignment.game.date)} at ${formatTime(assignment.game.time)}</span>
+                    </div>
+                    <div class="game-detail-item">
+                        <i class="fas fa-map-marker-alt game-detail-icon"></i>
+                        <span>${assignment.game.location.name}</span>
+                    </div>
+                    <div class="game-detail-item">
+                        <i class="fas fa-trophy game-detail-icon"></i>
+                        <span>${assignment.game.league.name} (${assignment.game.league.level})</span>
+                    </div>
+                </div>
+            `;
+            
+            // Reset form
+            document.getElementById('response-notes').value = '';
+            document.querySelectorAll('input[name="response"]').forEach(input => input.checked = false);
+            
+            // Show modal
+            new bootstrap.Modal(document.getElementById('responseModal')).show();
+        }
+        
+        function submitResponse() {
+            const response = document.querySelector('input[name="response"]:checked');
+            const notes = document.getElementById('response-notes').value;
+            
+            if (!response) {
+                alert('Please select a response (Accept or Decline)');
+                return;
+            }
+            
+            submitAssignmentResponse(currentAssignmentId, response.value, notes);
+            bootstrap.Modal.getInstance(document.getElementById('responseModal')).hide();
+        }
+        
+        function submitAssignmentResponse(assignmentId, status, notes) {
+            const data = {
+                assignment_id: assignmentId,
+                status: status,
+                notes: notes
+            };
+            
+            // Show loading state
+            const assignmentCard = document.querySelector(`[data-assignment="${assignmentId}"]`);
+            if (assignmentCard) {
+                assignmentCard.style.opacity = '0.6';
+            }
+            
+            fetch('/game/official/assignments/respond', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.success) {
+                    // Reload assignments to reflect changes
+                    loadAssignments();
+                    
+                    const statusText = status === 'accepted' ? 'accepted' : 'declined';
+                    showAlert(`Assignment ${statusText} successfully!`, 'success');
+                } else {
+                    showAlert('Error updating assignment: ' + result.message, 'danger');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showAlert('Error updating assignment', 'danger');
+            })
+            .finally(() => {
+                if (assignmentCard) {
+                    assignmentCard.style.opacity = '1';
+                }
+            });
+        }
+        
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('en-US', {
+                weekday: 'short',
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric'
+            });
+        }
+        
+        function formatTime(timeString) {
+            const time = new Date('2000-01-01 ' + timeString);
+            return time.toLocaleTimeString('en-US', {
+                hour: 'numeric',
+                minute: '2-digit',
+                hour12: true
+            });
+        }
+        
+        function exportAssignments() {
+            window.open('/game/official/assignments/export', '_blank');
+        }
+        
+        function printSchedule() {
+            window.print();
+        }
+        
+        function showError(message) {
+            document.getElementById('assignments-container').innerHTML = `
+                <div class="empty-state">
+                    <i class="fas fa-exclamation-triangle text-danger"></i>
+                    <h5>Error Loading Assignments</h5>
+                    <p>${message}</p>
+                    <button class="btn btn-primary" onclick="loadAssignments()">Try Again</button>
+                </div>
+            `;
+        }
+        
+        function showAlert(message, type = 'info') {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+            alertDiv.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            
+            document.querySelector('.container-fluid').insertBefore(alertDiv, document.querySelector('.container-fluid').firstChild);
+            
+            setTimeout(() => {
+                alertDiv.remove();
+            }, 5000);
+        }
+    </script>
+    {% endblock %}
+</body>
+</html>

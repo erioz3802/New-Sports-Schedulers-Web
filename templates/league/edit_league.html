@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+
+{% block title %}Edit League - Sports Scheduler{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1><i class="bi bi-pencil-square me-2"></i>Edit League: {{ league.name }}</h1>
+            <a href="{{ url_for('league.manage_leagues') }}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-1"></i>Back to Leagues
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="bi bi-trophy-fill me-2"></i>League Information</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <div class="row">
+                        <div class="col-md-8 mb-3">
+                            <label for="name" class="form-label">League Name *</label>
+                            <input type="text" class="form-control" id="name" name="name" required
+                                   value="{{ league.name }}" placeholder="e.g., District 15-6A Basketball">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="level" class="form-label">Level *</label>
+                            <select class="form-select" id="level" name="level" required>
+                                <option value="">Select Level</option>
+                                <option value="Elementary" {{ 'selected' if league.level == 'Elementary' }}>Elementary</option>
+                                <option value="Middle School" {{ 'selected' if league.level == 'Middle School' }}>Middle School</option>
+                                <option value="JV" {{ 'selected' if league.level == 'JV' }}>JV</option>
+                                <option value="Varsity" {{ 'selected' if league.level == 'Varsity' }}>Varsity</option>
+                                <option value="High School" {{ 'selected' if league.level == 'High School' }}>High School</option>
+                                <option value="College" {{ 'selected' if league.level == 'College' }}>College</option>
+                                <option value="Adult Rec" {{ 'selected' if league.level == 'Adult Rec' }}>Adult Rec</option>
+                                <option value="Youth" {{ 'selected' if league.level == 'Youth' }}>Youth</option>
+                                <option value="Other" {{ 'selected' if league.level == 'Other' }}>Other</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="game_fee" class="form-label">Game Fee per Official</label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="number" class="form-control" id="game_fee" name="game_fee" 
+                                       step="0.01" min="0" value="{{ league.game_fee }}">
+                            </div>
+                            <div class="form-text">Amount paid to each official per game</div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="billing_amount" class="form-label">Billing Amount</label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="number" class="form-control" id="billing_amount" name="billing_amount" 
+                                       step="0.01" min="0" value="{{ league.billing_amount }}">
+                            </div>
+                            <div class="form-text">Total amount billed per game</div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="billing_recipient" class="form-label">Billing Recipient</label>
+                            <input type="text" class="form-control" id="billing_recipient" name="billing_recipient"
+                                   value="{{ league.billing_recipient or '' }}" placeholder="e.g., Klein ISD, Houston Sports League">
+                            <div class="form-text">Who receives the billing</div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Description</label>
+                        <textarea class="form-control" id="description" name="description" rows="3"
+                                  placeholder="Brief description of the league...">{{ league.description or '' }}</textarea>
+                    </div>
+                    
+                    <!-- League Status Info -->
+                    <div class="row">
+                        <div class="col-12 mb-3">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h6>League Information</h6>
+                                    <div class="row">
+                                        <div class="col-md-3">
+                                            <strong>Status:</strong> 
+                                            <span class="badge bg-{{ 'success' if league.is_active else 'secondary' }}">
+                                                {{ 'Active' if league.is_active else 'Inactive' }}
+                                            </span>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <strong>Members:</strong> {{ league.active_members_count }}
+                                        </div>
+                                        <div class="col-md-3">
+                                            <strong>Games:</strong> {{ league.games_count }}
+                                        </div>
+                                        <div class="col-md-3">
+                                            <strong>Created:</strong> {{ league.created_at.strftime('%m/%d/%Y') if league.created_at else 'Unknown' }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <!-- Toggle Status Button -->
+                            <form method="POST" action="{{ url_for('league.toggle_league_status', league_id=league.id) }}" class="d-inline">
+                                <button type="submit" class="btn btn-{{ 'warning' if league.is_active else 'success' }}"
+                                        onclick="return confirm('{{ 'Deactivate' if league.is_active else 'Activate' }} this league?')">
+                                    <i class="bi bi-{{ 'pause' if league.is_active else 'play' }} me-1"></i>
+                                    {{ 'Deactivate' if league.is_active else 'Activate' }} League
+                                </button>
+                            </form>
+                        </div>
+                        
+                        <div>
+                            <a href="{{ url_for('league.manage_leagues') }}" class="btn btn-outline-secondary me-2">Cancel</a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-lg me-1"></i>Update League
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

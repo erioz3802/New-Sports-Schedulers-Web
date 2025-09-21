@@ -1,0 +1,323 @@
+<!-- templates/admin/dashboard.html - Admin Dashboard -->
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard - Sports Scheduler{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1><i class="bi bi-speedometer2 me-2"></i>Admin Dashboard</h1>
+            <div class="btn-group">
+                <a href="{{ url_for('admin.add_user') }}" class="btn btn-primary">
+                    <i class="bi bi-person-plus me-1"></i>Add User
+                </a>
+                <a href="{{ url_for('admin.manage_users') }}" class="btn btn-outline-primary">
+                    <i class="bi bi-people me-1"></i>Manage Users
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Statistics Cards -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body text-center">
+                <i class="bi bi-people-fill display-4 text-primary"></i>
+                <h3 class="mt-2">{{ total_users }}</h3>
+                <p class="text-muted mb-0">Total Users</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body text-center">
+                <i class="bi bi-person-check-fill display-4 text-success"></i>
+                <h3 class="mt-2">{{ active_users }}</h3>
+                <p class="text-muted mb-0">Active Users</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body text-center">
+                <i class="bi bi-person-x-fill display-4 text-warning"></i>
+                <h3 class="mt-2">{{ inactive_users }}</h3>
+                <p class="text-muted mb-0">Inactive Users</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body text-center">
+                <i class="bi bi-shield-check display-4 text-info"></i>
+                <h3 class="mt-2">{{ role_stats.get('administrator', 0) + role_stats.get('superadmin', 0) }}</h3>
+                <p class="text-muted mb-0">Administrators</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Role Distribution -->
+    <div class="col-lg-6 mb-4">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white">
+                <h5 class="mb-0"><i class="bi bi-pie-chart me-2"></i>User Roles</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <tbody>
+                            <tr>
+                                <td><i class="bi bi-shield-fill text-danger me-2"></i>Superadmin</td>
+                                <td class="text-end">{{ role_stats.get('superadmin', 0) }}</td>
+                            </tr>
+                            <tr>
+                                <td><i class="bi bi-gear-fill text-primary me-2"></i>Administrator</td>
+                                <td class="text-end">{{ role_stats.get('administrator', 0) }}</td>
+                            </tr>
+                            <tr>
+                                <td><i class="bi bi-calendar-check text-success me-2"></i>Assigner</td>
+                                <td class="text-end">{{ role_stats.get('assigner', 0) }}</td>
+                            </tr>
+                            <tr>
+                                <td><i class="bi bi-person-badge text-info me-2"></i>Official</td>
+                                <td class="text-end">{{ role_stats.get('official', 0) }}</td>
+                            </tr>
+                            <tr>
+                                <td><i class="bi bi-eye text-secondary me-2"></i>Viewer</td>
+                                <td class="text-end">{{ role_stats.get('viewer', 0) }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Recent Users -->
+    <div class="col-lg-6 mb-4">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white">
+                <h5 class="mb-0"><i class="bi bi-clock-history me-2"></i>Recent Users</h5>
+            </div>
+            <div class="card-body">
+                {% if recent_users %}
+                <div class="list-group list-group-flush">
+                    {% for user in recent_users %}
+                    <div class="list-group-item border-0 px-0 py-2">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-1">{{ user.full_name }}</h6>
+                                <small class="text-muted">{{ user.email }}</small>
+                            </div>
+                            <div class="text-end">
+                                <span class="badge bg-{{ 'success' if user.is_active else 'secondary' }}">
+                                    {{ user.role.title() }}
+                                </span>
+                                <br>
+                                <small class="text-muted">{{ user.created_at.strftime('%m/%d/%Y') if user.created_at else 'Unknown' }}</small>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-muted">No users found.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+<!-- templates/admin/manage_users.html - User Management -->
+{% extends "base.html" %}
+
+{% block title %}Manage Users - Sports Scheduler{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1><i class="bi bi-people me-2"></i>Manage Users</h1>
+            <a href="{{ url_for('admin.add_user') }}" class="btn btn-primary">
+                <i class="bi bi-person-plus me-1"></i>Add New User
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Search and Filter -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <form method="GET" class="row g-3">
+                    <div class="col-md-4">
+                        <label for="search" class="form-label">Search</label>
+                        <input type="text" class="form-control" id="search" name="search" 
+                               value="{{ search }}" placeholder="Name or email...">
+                    </div>
+                    <div class="col-md-3">
+                        <label for="role" class="form-label">Role</label>
+                        <select class="form-select" id="role" name="role">
+                            <option value="">All Roles</option>
+                            <option value="superadmin" {{ 'selected' if role_filter == 'superadmin' }}>Superadmin</option>
+                            <option value="administrator" {{ 'selected' if role_filter == 'administrator' }}>Administrator</option>
+                            <option value="assigner" {{ 'selected' if role_filter == 'assigner' }}>Assigner</option>
+                            <option value="official" {{ 'selected' if role_filter == 'official' }}>Official</option>
+                            <option value="viewer" {{ 'selected' if role_filter == 'viewer' }}>Viewer</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="status" class="form-label">Status</label>
+                        <select class="form-select" id="status" name="status">
+                            <option value="">All Status</option>
+                            <option value="active" {{ 'selected' if status_filter == 'active' }}>Active</option>
+                            <option value="inactive" {{ 'selected' if status_filter == 'inactive' }}>Inactive</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">&nbsp;</label>
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-outline-primary">Filter</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Users Table -->
+<div class="row">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                {% if users.items %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Role</th>
+                                <th>Status</th>
+                                <th>Created</th>
+                                <th>Last Login</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for user in users.items %}
+                            <tr>
+                                <td>
+                                    <strong>{{ user.full_name }}</strong>
+                                    {% if user.phone %}
+                                    <br><small class="text-muted">{{ user.phone }}</small>
+                                    {% endif %}
+                                </td>
+                                <td>{{ user.email }}</td>
+                                <td>
+                                    <span class="badge bg-{{ 'danger' if user.role == 'superadmin' else 'primary' if user.role == 'administrator' else 'success' if user.role == 'assigner' else 'info' if user.role == 'official' else 'secondary' }}">
+                                        {{ user.role.title() }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="badge bg-{{ 'success' if user.is_active else 'secondary' }}">
+                                        {{ 'Active' if user.is_active else 'Inactive' }}
+                                    </span>
+                                </td>
+                                <td>{{ user.created_at.strftime('%m/%d/%Y') if user.created_at else 'Unknown' }}</td>
+                                <td>{{ user.last_login.strftime('%m/%d/%Y') if user.last_login else 'Never' }}</td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <a href="{{ url_for('admin.edit_user', user_id=user.id) }}" 
+                                           class="btn btn-outline-primary">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                        
+                                        {% if user.id != current_user.id %}
+                                        <form method="POST" action="{{ url_for('admin.toggle_user_status', user_id=user.id) }}" 
+                                              class="d-inline">
+                                            <button type="submit" class="btn btn-outline-{{ 'warning' if user.is_active else 'success' }}"
+                                                    onclick="return confirm('{{ 'Deactivate' if user.is_active else 'Activate' }} this user?')">
+                                                <i class="bi bi-{{ 'pause' if user.is_active else 'play' }}"></i>
+                                            </button>
+                                        </form>
+                                        
+                                        {% if current_user.is_superadmin %}
+                                        <form method="POST" action="{{ url_for('admin.delete_user', user_id=user.id) }}" 
+                                              class="d-inline">
+                                            <button type="submit" class="btn btn-outline-danger"
+                                                    onclick="return confirm('Delete this user permanently?')">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </form>
+                                        {% endif %}
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Pagination -->
+                {% if users.pages > 1 %}
+                <nav aria-label="User pagination">
+                    <ul class="pagination justify-content-center">
+                        {% if users.has_prev %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('admin.manage_users', page=users.prev_num, search=search, role=role_filter, status=status_filter) }}">Previous</a>
+                        </li>
+                        {% endif %}
+                        
+                        {% for page_num in users.iter_pages() %}
+                            {% if page_num %}
+                                {% if page_num != users.page %}
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ url_for('admin.manage_users', page=page_num, search=search, role=role_filter, status=status_filter) }}">{{ page_num }}</a>
+                                </li>
+                                {% else %}
+                                <li class="page-item active">
+                                    <span class="page-link">{{ page_num }}</span>
+                                </li>
+                                {% endif %}
+                            {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link">...</span>
+                            </li>
+                            {% endif %}
+                        {% endfor %}
+                        
+                        {% if users.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('admin.manage_users', page=users.next_num, search=search, role=role_filter, status=status_filter) }}">Next</a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                {% endif %}
+                
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="bi bi-people display-1 text-muted"></i>
+                    <h4 class="mt-3">No users found</h4>
+                    <p class="text-muted">Try adjusting your search criteria or add a new user.</p>
+                    <a href="{{ url_for('admin.add_user') }}" class="btn btn-primary">Add First User</a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
