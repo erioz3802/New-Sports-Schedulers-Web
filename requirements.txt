@@ -1,8 +1,20 @@
-Flask==3.0.0
+# requirements.txt - Sports Scheduler Web Application
+# Core Flask dependencies
+Flask==2.3.3
+Flask-SQLAlchemy==3.0.5
 Flask-Login==0.6.3
-Flask-SQLAlchemy==3.1.1
-python-dotenv==1.0.0
-gunicorn==21.2.0
-psycopg2-binary==2.9.9
-SQLAlchemy==2.0.23
-Werkzeug==3.0.1
+Werkzeug==2.3.7
+
+# Data processing for bulk operations
+pandas==2.1.1
+openpyxl==3.1.2
+
+# Additional dependencies for enhanced functionality
+requests==2.31.0        # For API calls (Google Maps, etc.)
+python-dateutil==2.8.2  # Better date handling
+
+# Email functionality (for future notifications)
+Flask-Mail==0.9.1
+
+# Development and debugging
+python-dotenv==1.0.0    # Environment variable management
