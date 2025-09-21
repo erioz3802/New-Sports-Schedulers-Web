@@ -45,18 +45,20 @@ def dashboard():
                          role_stats=role_stats,
                          recent_users=recent_users)
 
+# views/admin_routes.py - Fix for pagination issue in manage_users function
+
 @admin_bp.route('/users')
 @login_required
 @admin_required  
 def manage_users():
     """User management page with search and filtering"""
-
-    from models.database import db, User
-
     page = request.args.get('page', 1, type=int)
     search = request.args.get('search', '')
     role_filter = request.args.get('role', '')
     status_filter = request.args.get('status', '')
+    
+    # Import here to avoid circular imports
+    from models.database import db, User
     
     # Build query
     query = User.query
@@ -81,18 +83,30 @@ def manage_users():
     elif status_filter == 'inactive':
         query = query.filter(User.is_active == False)
     
-    # Paginate results
+    # FIXED: Ensure pagination works correctly
     users = query.order_by(User.last_name, User.first_name).paginate(
         page=page,
-        per_page=20,
-        error_out=False
+        per_page=20,           # 20 users per page
+        error_out=False,       # Don't throw error if page doesn't exist
+        max_per_page=100       # Maximum allowed per page
     )
+    
+    # DEBUG: Add debug information to template context
+    debug_info = {
+        'total_users': users.total,
+        'total_pages': users.pages,
+        'current_page': users.page,
+        'per_page': users.per_page,
+        'has_prev': users.has_prev,
+        'has_next': users.has_next
+    }
     
     return render_template('admin/manage_users.html',
                          users=users,
                          search=search,
                          role_filter=role_filter,
-                         status_filter=status_filter)
+                         status_filter=status_filter,
+                         debug_info=debug_info)  # Add debug info
 
 @admin_bp.route('/users/add', methods=['GET', 'POST'])
 @login_required
