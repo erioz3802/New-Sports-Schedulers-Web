@@ -12,11 +12,19 @@ import os
 # Google Maps API Configuration
 GOOGLE_MAPS_API_KEY = 'AIzaSyBG6YHNSe5JjnDW7mnPa32v1OFU4liwddE'
 
-# Initialize Flask app
-app = Flask(__name__)
-app.config['SECRET_KEY'] = 'sports-scheduler-secret-key-change-in-production'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///sports_scheduler.db'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+# Production-ready configuration
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'sports-scheduler-secret-key-change-in-production')
+
+# Database configuration for both development and production
+database_url = os.environ.get('DATABASE_URL')
+if database_url:
+    # Production database (PostgreSQL on Render)
+    if database_url.startswith('postgres://'):
+        database_url = database_url.replace('postgres://', 'postgresql://', 1)
+    app.config['SQLALCHEMY_DATABASE_URI'] = database_url
+else:
+    # Development database (SQLite)
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///sports_scheduler.db'
 
 # Initialize database and Flask-Login
 from models.database import db, User, create_demo_users
@@ -535,11 +543,11 @@ if __name__ == '__main__':
     setup_email_notifications()
     
     print("=" * 60)
-print("SPORTS SCHEDULERS - JES BASEBALL LLC")
-print("=" * 60)
-print("Server: Starting production server...")
-print("Copyright: 2025 JES Baseball LLC")
-print("Contact: admin@sportsschedulers.com")
-print("=" * 60)
+    print("SPORTS SCHEDULERS - JES BASEBALL LLC")
+    print("=" * 60)
+    print("Server: Starting production server...")
+    print("Copyright: 2025 JES Baseball LLC")
+    print("Contact: admin@sportsschedulers.com")
+    print("=" * 60)
     
     app.run(host='localhost', port=5000, debug=True)
