@@ -5,8 +5,9 @@ Flask-SQLAlchemy==3.0.5
 Flask-Login==0.6.3
 Werkzeug==2.3.7
 
-# Data processing for bulk operations
-pandas==2.1.1
+# Compatible numpy and pandas versions to avoid binary incompatibility
+numpy==1.24.3
+pandas==2.0.3
 openpyxl==3.1.2
 
 # Additional dependencies for enhanced functionality
