@@ -12,8 +12,20 @@
                     <p class="mb-0 small">JES Baseball LLC</p>
                 </div>
                 <div class="card-body">
+                    <!-- Display flash messages -->
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ 'danger' if category == 'error' else 'success' if category == 'success' else 'info' }} alert-dismissible fade show" role="alert">
+                                    {{ message }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+
                     <form method="POST">
-                        {{ form.hidden_tag() if form else '' }}
+                        <!-- Remove the problematic csrf_token line -->
                         
                         <div class="mb-3">
                             <label for="email" class="form-label">Email Address</label>
@@ -39,7 +51,7 @@
                             <input type="checkbox" 
                                    class="form-check-input" 
                                    id="remember" 
-                                   name="remember">
+                                   name="remember_me">
                             <label class="form-check-label" for="remember">
                                 Remember Me
                             </label>
@@ -51,6 +63,15 @@
                             </button>
                         </div>
                     </form>
+
+                    <!-- Demo account info -->
+                    <div class="mt-4 p-3 bg-light rounded">
+                        <small class="text-muted">
+                            <strong>Demo Accounts:</strong><br>
+                            <strong>Admin:</strong> admin@sportsscheduler.com / admin123<br>
+                            <strong>Official:</strong> official@sportsscheduler.com / official123
+                        </small>
+                    </div>
                 </div>
                 <div class="card-footer text-center text-muted small">
                     © 2025 JES Baseball LLC. All rights reserved.
