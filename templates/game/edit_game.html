@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Game - Sports Scheduler{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1><i class="bi bi-pencil-square me-2"></i>Edit Game</h1>
+            <a href="{{ url_for('game.manage_games') }}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-1"></i>Back to Games
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-10">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="mb-0"><i class="bi bi-calendar-event me-2"></i>Edit Game: {{ game.game_title }}</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="league_id" class="form-label">League *</label>
+                            <select class="form-select" id="league_id" name="league_id" required>
+                                {% for league in leagues %}
+                                <option value="{{ league.id }}" {{ 'selected' if league.id == game.league_id }}>
+                                    {{ league.full_name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="location_id" class="form-label">Location *</label>
+                            <select class="form-select" id="location_id" name="location_id" required>
+                                {% for location in locations %}
+                                <option value="{{ location.id }}" {{ 'selected' if location.id == game.location_id }}>
+                                    {{ location.name }} - {{ location.city }}, {{ location.state }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="date" class="form-label">Date *</label>
+                            <input type="date" class="form-control" id="date" name="date" 
+                                   value="{{ game.date.strftime('%Y-%m-%d') }}" required>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="time" class="form-label">Time *</label>
+                            <input type="time" class="form-control" id="time" name="time" 
+                                   value="{{ game.time.strftime('%H:%M') }}" required>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="field_name" class="form-label">Field/Court</label>
+                            <input type="text" class="form-control" id="field_name" name="field_name" 
+                                   value="{{ game.field_name or '' }}">
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="home_team" class="form-label">Home Team</label>
+                            <input type="text" class="form-control" id="home_team" name="home_team" 
+                                   value="{{ game.home_team or '' }}">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="away_team" class="form-label">Away Team</label>
+                            <input type="text" class="form-control" id="away_team" name="away_team" 
+                                   value="{{ game.away_team or '' }}">
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="level" class="form-label">Game Level</label>
+                            <input type="text" class="form-control" id="level" name="level" 
+                                   value="{{ game.level or '' }}">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="estimated_duration" class="form-label">Duration (minutes)</label>
+                            <input type="number" class="form-control" id="estimated_duration" name="estimated_duration" 
+                                   value="{{ game.estimated_duration }}" min="30" max="300">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="fee_per_official" class="form-label">Fee per Official</label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="number" class="form-control" id="fee_per_official" name="fee_per_official" 
+                                       step="0.01" min="0" value="{{ game.fee_per_official or '' }}">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="notes" class="form-label">Game Notes</label>
+                            <textarea class="form-control" id="notes" name="notes" rows="3">{{ game.notes or '' }}</textarea>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="special_instructions" class="form-label">Special Instructions</label>
+                            <textarea class="form-control" id="special_instructions" name="special_instructions" rows="3">{{ game.special_instructions or '' }}</textarea>
+                        </div>
+                    </div>
+
+                    <!-- Game Ranking Section - ADD THIS -->
+                    <div class="card mt-3">
+                        <div class="card-header">
+                            <h6><i class="fas fa-star"></i> Game Importance</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <label for="game_ranking" class="form-label">Game Ranking</label>
+                                    <select class="form-select" id="game_ranking" name="game_ranking">
+                                        <option value="">Select ranking (optional)</option>
+                                        <option value="1" {% if game.game_ranking == 1 %}selected{% endif %}>1 - Basic/Training Game</option>
+                                        <option value="2" {% if game.game_ranking == 2 %}selected{% endif %}>2 - Regular Season - Low Priority</option>
+                                        <option value="3" {% if game.game_ranking == 3 %}selected{% endif %}>3 - Regular Season - Standard</option>
+                                        <option value="4" {% if game.game_ranking == 4 %}selected{% endif %}>4 - Important Game/Playoff</option>
+                                        <option value="5" {% if game.game_ranking == 5 %}selected{% endif %}>5 - Championship/High Priority</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="ranking_notes" class="form-label">Ranking Notes</label>
+                                    <textarea class="form-control" id="ranking_notes" name="ranking_notes" rows="2" 
+                                              placeholder="Why this ranking?">{{ game.ranking_notes or '' }}</textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-end gap-2">
+                        <a href="{{ url_for('game.manage_games') }}" class="btn btn-outline-secondary">Cancel</a>
+                        <button type="submit" class="btn btn-warning">
+                            <i class="bi bi-check-lg me-1"></i>Update Game
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

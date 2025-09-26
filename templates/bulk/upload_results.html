@@ -1,0 +1,198 @@
+<!-- templates/bulk/upload_results.html -->
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="bi bi-check-circle me-2"></i>Upload Results</h2>
+                <div class="d-flex gap-2">
+                    <a href="{{ url_for('bulk.upload_games') }}" class="btn btn-outline-primary">
+                        <i class="bi bi-upload me-1"></i>Upload Another File
+                    </a>
+                    <a href="{{ url_for('game.manage_games') }}" class="btn btn-success">
+                        <i class="bi bi-eye me-1"></i>View Games
+                    </a>
+                </div>
+            </div>
+
+            <!-- Summary Cards -->
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="card bg-success text-white">
+                        <div class="card-body">
+                            <h4>{{ results.success_count }}</h4>
+                            <p class="mb-0">Successful</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-danger text-white">
+                        <div class="card-body">
+                            <h4>{{ results.error_count }}</h4>
+                            <p class="mb-0">Errors</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-warning text-dark">
+                        <div class="card-body">
+                            <h4>{{ results.warning_count }}</h4>
+                            <p class="mb-0">Warnings</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-info text-white">
+                        <div class="card-body">
+                            <h4>{{ results.process_mode|title }}</h4>
+                            <p class="mb-0">Mode</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {% if results.preview_data and results.process_mode == 'preview' %}
+            <!-- Preview Data -->
+            <div class="card mb-4">
+                <div class="card-header bg-info text-white">
+                    <h5><i class="bi bi-eye me-2"></i>Preview - Games to be Imported</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Row</th>
+                                    <th>League</th>
+                                    <th>Date</th>
+                                    <th>Time</th>
+                                    <th>Location</th>
+                                    <th>Teams</th>
+                                    <th>Officials</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in results.preview_data %}
+                                <tr>
+                                    <td>{{ item.row }}</td>
+                                    <td>{{ item.league_name }}</td>
+                                    <td>{{ item.date.strftime('%Y-%m-%d') if item.date else 'Invalid' }}</td>
+                                    <td>{{ item.time.strftime('%H:%M') if item.time else 'Invalid' }}</td>
+                                    <td>
+                                        {{ item.location_name }}
+                                        {% if item.field_name %}
+                                        <br><small class="text-muted">{{ item.field_name }}</small>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <strong>{{ item.home_team }}</strong> vs {{ item.away_team }}
+                                    </td>
+                                    <td>
+                                        {% if item.assignments %}
+                                            {% for assignment in item.assignments %}
+                                            <div class="small">
+                                                {{ assignment.official_name }}
+                                                {% if assignment.position %}
+                                                ({{ assignment.position }})
+                                                {% endif %}
+                                            </div>
+                                            {% endfor %}
+                                        {% else %}
+                                        <span class="text-muted">None</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    {% if results.success_count > 0 %}
+                    <div class="alert alert-info">
+                        <h6><i class="bi bi-info-circle me-2"></i>Ready to Import</h6>
+                        <p class="mb-2">{{ results.success_count }} games are ready to be imported. If everything looks correct, upload the file again with "Save to Database" mode.</p>
+                        <a href="{{ url_for('bulk.upload_games') }}" class="btn btn-primary">
+                            <i class="bi bi-upload me-1"></i>Import These Games
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Errors -->
+            {% if results.errors %}
+            <div class="card mb-4">
+                <div class="card-header bg-danger text-white">
+                    <h5><i class="bi bi-exclamation-triangle me-2"></i>Errors ({{ results.error_count }})</h5>
+                </div>
+                <div class="card-body">
+                    {% for error in results.errors %}
+                    <div class="alert alert-danger" role="alert">
+                        {{ error }}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Warnings -->
+            {% if results.warnings %}
+            <div class="card mb-4">
+                <div class="card-header bg-warning text-dark">
+                    <h5><i class="bi bi-exclamation-circle me-2"></i>Warnings ({{ results.warning_count }})</h5>
+                </div>
+                <div class="card-body">
+                    {% for warning in results.warnings %}
+                    <div class="alert alert-warning" role="alert">
+                        {{ warning }}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Success Message -->
+            {% if results.success_count > 0 and results.process_mode == 'save' %}
+            <div class="alert alert-success">
+                <h5><i class="bi bi-check-circle me-2"></i>Import Successful!</h5>
+                <p>{{ results.success_count }} games have been successfully imported and are now available in the system.</p>
+                <a href="{{ url_for('game.manage_games') }}" class="btn btn-success">
+                    <i class="bi bi-eye me-1"></i>View Imported Games
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %>-check-circle text-success me-1"></i>
+                                            <a href="{{ url_for('league.manage_leagues') }}">Verify leagues exist</a>
+                                        </li>
+                                        <li><i class="bi bi-check-circle text-success me-1"></i>
+                                            <a href="{{ url_for('league.manage_locations') }}">Add missing locations</a>
+                                        </li>
+                                        <li><i class="bi bi-check-circle text-success me-1"></i>
+                                            <a href="{{ url_for('admin.manage_users') }}">Confirm official accounts</a>
+                                        </li>
+                                    </ul>
+                                </div>
+                                <div class="col-md-4">
+                                    <h6>After Importing:</h6>
+                                    <ul class="list-unstyled">
+                                        <li><i class="bi bi-eye text-info me-1"></i>
+                                            <a href="{{ url_for('game.manage_games') }}">Review imported games</a>
+                                        </li>
+                                        <li><i class="bi bi-people text-primary me-1"></i>
+                                            Check official assignments
+                                        </li>
+                                        <li><i class="bi bi-broadcast text-warning me-1"></i>
+                                            Release games to officials
+                                        </li>
+                                    </ul>
+                                </div>
+                                <div class="col-md-4">
+                                    <h6>Need Help?</h6>
+                                    <ul class="list-unstyled">
+                                        <li><i class="bi bi

@@ -1,0 +1,306 @@
+{% extends "base.html" %}
+
+{% block title %}Assign Officials - Sports Scheduler{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1><i class="bi bi-person-plus me-2"></i>Assign Officials</h1>
+            <a href="{{ url_for('game.manage_games') }}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-1"></i>Back to Games
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Game Information -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="bi bi-calendar-event me-2"></i>Game Details</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h4>{{ game.game_title }}</h4>
+                        <p class="mb-2">
+                            <strong>League:</strong> {{ game.league.full_name }}<br>
+                            <strong>Date:</strong> {{ game.date.strftime('%A, %B %d, %Y') }}<br>
+                            <strong>Time:</strong> {{ game.time.strftime('%I:%M %p') }} 
+                            ({{ game.estimated_duration }} minutes)
+                        </p>
+                        {% if game.level %}
+                        <p class="mb-2"><strong>Level:</strong> <span class="badge bg-info">{{ game.level }}</span></p>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        <p class="mb-2">
+                            <strong>Location:</strong> {{ game.location.name }}
+                            {% if game.field_name %}<br><strong>Field:</strong> {{ game.field_name }}{% endif %}
+                            {% if game.location.full_address %}
+                            <br><small class="text-muted">{{ game.location.full_address }}</small>
+                            {% endif %}
+                        </p>
+                        <p class="mb-2">
+                            <strong>Status:</strong> 
+                            <span class="badge bg-{{ 'secondary' if game.status == 'draft' else 'warning' if game.status == 'ready' else 'info' if game.status == 'released' else 'success' }}">
+                                {{ game.status.title() }}
+                            </span>
+                        </p>
+                        {% if game.fee_per_official %}
+                        <p class="mb-2">
+                            <strong>Fee per Official:</strong> 
+                            <span class="text-success">${{ "%.2f"|format(game.fee_per_official) }}</span>
+                        </p>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                {% if game.notes or game.special_instructions %}
+                <hr>
+                <div class="row">
+                    {% if game.notes %}
+                    <div class="col-md-6">
+                        <h6>Game Notes:</h6>
+                        <p class="text-muted">{{ game.notes }}</p>
+                    </div>
+                    {% endif %}
+                    {% if game.special_instructions %}
+                    <div class="col-md-6">
+                        <h6>Special Instructions:</h6>
+                        <p class="text-warning">{{ game.special_instructions }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Current Assignments -->
+    <div class="col-lg-6 mb-4">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0"><i class="bi bi-people-fill me-2"></i>Current Assignments ({{ current_assignments|length }})</h5>
+            </div>
+            <div class="card-body">
+                {% if current_assignments %}
+                <div class="list-group list-group-flush">
+                    {% for assignment in current_assignments %}
+                    <div class="list-group-item border-0 px-0 py-3">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <h6 class="mb-1">{{ assignment.user.full_name }}</h6>
+                                <small class="text-muted">{{ assignment.user.email }}</small>
+                                {% if assignment.user.phone %}
+                                <br><small class="text-muted">{{ assignment.user.phone }}</small>
+                                {% endif %}
+                                {% if assignment.position %}
+                                <br><span class="badge bg-primary">{{ assignment.position }}</span>
+                                {% endif %}
+                                <br><small class="text-info">
+                                    Assigned {{ assignment.assigned_at.strftime('%m/%d/%Y') }}
+                                    {% if assignment.assignment_type == 'auto' %}
+                                    (Auto-assigned)
+                                    {% endif %}
+                                </small>
+                            </div>
+                            <div>
+                                <span class="badge bg-{{ 'success' if assignment.status == 'accepted' else 'warning' if assignment.status == 'assigned' else 'danger' }}">
+                                    {{ assignment.status.title() }}
+                                </span>
+                                <br>
+                                <form method="POST" action="{{ url_for('game.remove_assignment', assignment_id=assignment.id) }}" 
+                                      class="d-inline mt-2">
+                                    <button type="submit" class="btn btn-outline-danger btn-sm"
+                                            onclick="return confirm('Remove this assignment?')">
+                                        <i class="bi bi-x-lg"></i> Remove
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                        
+                        {% if assignment.decline_reason %}
+                        <div class="mt-2">
+                            <small class="text-danger">
+                                <strong>Decline Reason:</strong> {{ assignment.decline_reason }}
+                            </small>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-3">
+                    <i class="bi bi-person-x display-4 text-muted"></i>
+                    <p class="text-muted mt-2">No officials assigned yet.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Add Assignment -->
+    <div class="col-lg-6 mb-4">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0"><i class="bi bi-person-plus-fill me-2"></i>Add Official</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('game.assign_official_to_game', game_id=game.id) }}">
+                    <div class="mb-3">
+                        <label for="user_id" class="form-label">Select Official *</label>
+                        <select class="form-select" id="user_id" name="user_id" required>
+                            <option value="">Choose an official...</option>
+                            {% for official in available_officials %}
+                            {% set already_assigned = current_assignments|selectattr('user_id', 'equalto', official.id)|list|length > 0 %}
+                            {% if not already_assigned %}
+                            <option value="{{ official.id }}">
+                                {{ official.full_name }} ({{ official.role.title() }})
+                                {% if official.email %} - {{ official.email }}{% endif %}
+                            </option>
+                            {% endif %}
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="position" class="form-label">Position/Role</label>
+                        <select class="form-select" id="position" name="position">
+                            <option value="">No specific position</option>
+                            <option value="Referee">Referee</option>
+                            <option value="Umpire">Umpire</option>
+                            <option value="Line Judge">Line Judge</option>
+                            <option value="Back Judge">Back Judge</option>
+                            <option value="Field Judge">Field Judge</option>
+                            <option value="Side Judge">Side Judge</option>
+                            <option value="Crew Chief">Crew Chief</option>
+                        </select>
+                    </div>
+                    
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-plus-lg me-1"></i>Assign Official
+                        </button>
+                    </div>
+                </form>
+                
+                <hr>
+                
+                <!-- Auto-Assignment Option -->
+                <div class="text-center">
+                    <h6 class="mb-3">Auto-Assignment</h6>
+                    <p class="text-muted small">Automatically assign officials based on ranking and availability</p>
+                    <button type="button" class="btn btn-outline-success" id="autoAssignBtn">
+                        <i class="bi bi-magic me-1"></i>Auto-Assign Officials
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Available Officials Information -->
+<div class="row">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-light">
+                <h5 class="mb-0"><i class="bi bi-info-circle me-2"></i>Available Officials ({{ available_officials|length }})</h5>
+            </div>
+            <div class="card-body">
+                {% if available_officials %}
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Role</th>
+                                <th>Contact</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for official in available_officials %}
+                            {% set already_assigned = current_assignments|selectattr('user_id', 'equalto', official.id)|list|length > 0 %}
+                            <tr class="{{ 'table-secondary' if already_assigned }}">
+                                <td>
+                                    <strong>{{ official.full_name }}</strong>
+                                    {% if already_assigned %}
+                                    <br><span class="badge bg-success">Already Assigned</span>
+                                    {% endif %}
+                                </td>
+                                <td><span class="badge bg-primary">{{ official.role.title() }}</span></td>
+                                <td>
+                                    {{ official.email }}
+                                    {% if official.phone %}
+                                    <br><small class="text-muted">{{ official.phone }}</small>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="badge bg-{{ 'success' if official.is_active else 'secondary' }}">
+                                        {{ 'Active' if official.is_active else 'Inactive' }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {% if not already_assigned %}
+                                    <button type="button" class="btn btn-outline-primary btn-sm assign-btn" 
+                                            data-user-id="{{ official.id }}" data-user-name="{{ official.full_name }}">
+                                        <i class="bi bi-plus"></i> Assign
+                                    </button>
+                                    {% else %}
+                                    <span class="text-muted">Assigned</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-3">
+                    <i class="bi bi-person-x display-4 text-muted"></i>
+                    <p class="text-muted mt-2">No available officials found for this game.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Quick assign buttons
+    document.querySelectorAll('.assign-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const userId = this.dataset.userId;
+            const userName = this.dataset.userName;
+            
+            // Set the select dropdown
+            document.getElementById('user_id').value = userId;
+            
+            // Scroll to form
+            document.getElementById('user_id').scrollIntoView({ behavior: 'smooth' });
+            
+            // Optional: Show confirmation
+            if (confirm(`Assign ${userName} to this game?`)) {
+                document.querySelector('form[action*="assign-official-to-game"]').submit();
+            }
+        });
+    });
+    
+    // Auto-assign functionality
+    document.getElementById('autoAssignBtn').addEventListener('click', function() {
+        if (confirm('Automatically assign 2 officials to this game based on ranking and availability?')) {
+            // In a real implementation, this would make an AJAX call
+            // For now, show a placeholder message
+            alert('Auto-assignment feature would be implemented here.\n\nThis would:\n1. Find available officials\n2. Rank by experience and availability\n3. Assign top-ranked officials\n4. Check for conflicts');
+        }
+    });
+});
+</script>
+{% endblock %}

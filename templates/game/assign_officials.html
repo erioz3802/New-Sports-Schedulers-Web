@@ -1,0 +1,532 @@
+{% extends "base.html" %}
+
+{% block title %}Assign Officials - {{ game.game_title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-12">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2>Assign Officials</h2>
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb">
+                            <li class="breadcrumb-item"><a href="{{ url_for('index') }}">Dashboard</a></li>
+                            <li class="breadcrumb-item"><a href="{{ url_for('game.manage_games') }}">Game Management</a></li>
+                            <li class="breadcrumb-item active">Assign Officials</li>
+                        </ol>
+                    </nav>
+                </div>
+                <div>
+                    <a href="{{ url_for('game.manage_games') }}" class="btn btn-secondary">
+                        Back to Games
+                    </a>
+                </div>
+            </div>
+
+            <!-- Linked Games Alert -->
+            {% if game.notes and 'Linked Group:' in game.notes %}
+                {% set group_id = game.notes.split('Linked Group:')[1].split('\n')[0].strip() %}
+                <div class="alert alert-info" role="alert">
+                    <div class="d-flex align-items-center">
+                        <i class="bi bi-link-45deg me-2 fs-4"></i>
+                        <div>
+                            <h6 class="alert-heading mb-1">Linked Games Group</h6>
+                            <p class="mb-2">This game is part of linked group: <strong>{{ group_id }}</strong></p>
+                            <p class="mb-0 small">
+                                <i class="bi bi-info-circle"></i> You can assign officials to all games in this group at once.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+
+            <!-- Game Information Card -->
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Game Details</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="fw-bold">{{ game.game_title }}</h6>
+                            <p class="mb-2">
+                                <strong>Date:</strong> {{ game.date.strftime('%A, %B %d, %Y') }}<br>
+                                <strong>Time:</strong> {{ game.time.strftime('%I:%M %p') }}
+                                {% if game.estimated_duration %}
+                                <span class="text-muted">({{ game.estimated_duration }} min)</span>
+                                {% endif %}
+                            </p>
+                            <p class="mb-2">
+                                <strong>League:</strong> {{ game.league.name }}
+                                {% if game.level %}
+                                <span class="badge bg-info">{{ game.level }}</span>
+                                {% endif %}
+                            </p>
+                        </div>
+                        <div class="col-md-6">
+                            <p class="mb-2">
+                                <strong>Location:</strong> {{ game.location.name }}
+                                {% if game.field_name %}<br><strong>Field:</strong> {{ game.field_name }}{% endif %}
+                            </p>
+                            <p class="mb-2">
+                                <strong>Status:</strong> 
+                                <span class="badge bg-{{ 'secondary' if game.status == 'draft' else 'warning' if game.status == 'ready' else 'info' if game.status == 'released' else 'success' }}">
+                                    {{ game.status.title() }}
+                                </span>
+                            </p>
+                            {% if game.fee_per_official %}
+                            <p class="mb-2">
+                                <strong>Fee per Official:</strong> 
+                                <span class="text-success">${{ "%.2f"|format(game.fee_per_official) }}</span>
+                            </p>
+                            {% endif %}
+                            
+                            <!-- LINKED GAMES INDICATOR -->
+                            {% if game.notes and 'Linked Group:' in game.notes %}
+                                {% set group_id = game.notes.split('Linked Group:')[1].split('\n')[0].strip() %}
+                                <p class="mb-2">
+                                    <strong>Linked Group:</strong>
+                                    <span class="badge bg-info">
+                                        <i class="bi bi-link-45deg"></i> {{ group_id }}
+                                    </span>
+                                </p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <!-- Current Assignments -->
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header bg-success text-white">
+                            <h5 class="mb-0">
+                                Current Assignments ({{ current_assignments|length }})
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            {% if current_assignments %}
+                                {% for assignment in current_assignments %}
+                                <div class="d-flex justify-content-between align-items-center border-bottom py-2">
+                                    <div>
+                                        <strong>{{ assignment.user.full_name }}</strong>
+                                        {% if assignment.position %}
+                                        <br><small class="text-muted">{{ assignment.position }}</small>
+                                        {% endif %}
+                                        <br><small class="text-info">
+                                            Status: {{ assignment.status.title() }}
+                                        </small>
+                                    </div>
+                                    <div>
+                                        <form method="POST" action="{{ url_for('game.remove_assignment', assignment_id=assignment.id) }}" class="d-inline">
+                                            <button type="submit" class="btn btn-sm btn-outline-danger" 
+                                                    onclick="return confirm('Remove {{ assignment.user.full_name }} from this assignment?')">
+                                                Remove
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            {% else %}
+                                <p class="text-muted text-center py-3">
+                                    No officials assigned yet
+                                </p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Add Assignment -->
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header bg-info text-white">
+                            <h5 class="mb-0">
+                                Assign Official
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <form method="POST" action="{{ url_for('game.assign_official_to_game', game_id=game.id) }}" id="assignmentForm">
+                                <div class="mb-3">
+                                    <label for="user_id" class="form-label">
+                                        <i class="bi bi-person-search me-1"></i>Select Official *
+                                    </label>
+                                    <select class="form-select searchable-officials" id="user_id" name="user_id" required>
+                                        <option value="">Type to search officials...</option>
+                                        {% for official in available_officials %}
+                                        {% set already_assigned = current_assignments|selectattr('user_id', 'equalto', official.id)|list|length > 0 %}
+                                        {% if not already_assigned %}
+                                        <option value="{{ official.id }}" 
+                                                data-email="{{ official.email or '' }}" 
+                                                data-role="{{ official.role }}"
+                                                data-phone="{{ official.phone or '' }}">
+                                            {{ official.full_name }} ({{ official.role.title() }})
+                                            {% if official.email %} - {{ official.email }}{% endif %}
+                                        </option>
+                                        {% endif %}
+                                        {% endfor %}
+                                    </select>
+                                    <div class="form-text">
+                                        <i class="bi bi-info-circle me-1"></i>
+                                        Start typing name, email, or role to filter results
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="position" class="form-label">Position (Optional)</label>
+                                    <input type="text" name="position" id="position" class="form-control" 
+                                           placeholder="e.g., Referee, Umpire, Linesman">
+                                </div>
+                                
+                                <!-- LINKED GAMES OPTION -->
+                                {% if game.notes and 'Linked Group:' in game.notes %}
+                                <div class="mb-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="applyToLinked" name="apply_to_linked" value="1">
+                                        <label class="form-check-label" for="applyToLinked">
+                                            <i class="bi bi-link-45deg text-info"></i>
+                                            <strong>Assign to ALL games in linked group</strong>
+                                            <br><small class="text-muted">This will assign the official to all games in group {{ group_id }}</small>
+                                        </label>
+                                    </div>
+                                </div>
+                                {% endif %}
+                                
+                                <div class="d-grid">
+                                    <button type="submit" class="btn btn-primary" id="assignBtn">
+                                        Assign Official
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Auto-Assignment Option -->
+                    {% if available_officials|length >= 2 %}
+                    <div class="card mt-3">
+                        <div class="card-header bg-warning text-dark">
+                            <h6 class="mb-0">
+                                <i class="bi bi-magic me-2"></i>Auto-Assignment
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <p class="small text-muted mb-2">
+                                Automatically assign officials based on rankings and availability.
+                            </p>
+                            <form method="POST" action="{{ url_for('game.auto_assign_officials', game_id=game.id) }}" id="autoAssignForm">
+                                <div class="mb-2">
+                                    <label for="num_officials" class="form-label small">Number of Officials</label>
+                                    <select name="num_officials" id="num_officials" class="form-select form-select-sm">
+                                        <option value="1">1 Official</option>
+                                        <option value="2" selected>2 Officials</option>
+                                        <option value="3">3 Officials</option>
+                                    </select>
+                                </div>
+                                <div class="d-grid">
+                                    <button type="submit" class="btn btn-warning btn-sm">
+                                        <i class="bi bi-magic me-1"></i>Auto-Assign
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info mt-3">
+                        <i class="bi bi-info-circle me-2"></i>
+                        Need at least 2 available officials for auto-assignment.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- LINKED GAMES PREVIEW -->
+            {% if game.notes and 'Linked Group:' in game.notes %}
+            <div class="row mt-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header bg-light">
+                            <h6 class="mb-0">
+                                <i class="bi bi-link-45deg"></i>
+                                Games in this Linked Group ({{ group_id }})
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="alert alert-info small">
+                                <i class="bi bi-info-circle"></i>
+                                When you check "Assign to ALL games in linked group" above, the official will be assigned to all these games at once.
+                            </div>
+                            <div id="linkedGamesPreview">
+                                <p class="text-muted">
+                                    <i class="bi bi-hourglass-split"></i> Loading linked games...
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Enhanced JavaScript with proper error handling -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Check if jQuery is loaded before using Select2
+    if (typeof jQuery === 'undefined') {
+        console.error('jQuery is not loaded. Select2 cannot be initialized.');
+        return;
+    }
+
+    // Check if Select2 is loaded
+    if (typeof jQuery.fn.select2 === 'undefined') {
+        console.error('Select2 is not loaded. Using fallback dropdown.');
+        return;
+    }
+
+    try {
+        // Initialize searchable dropdown for official selection
+        $('.searchable-officials').select2({
+            theme: 'bootstrap-5',
+            placeholder: 'Type to search officials...',
+            allowClear: true,
+            width: '100%',
+            templateResult: formatOfficialOption,
+            templateSelection: formatOfficialSelection,
+            matcher: customOfficialMatcher
+        });
+
+        // Custom formatting for dropdown options with null safety
+        function formatOfficialOption(option) {
+            if (!option.id) {
+                return option.text;
+            }
+
+            const $element = $(option.element);
+            const email = String($element.data('email') || '');
+            const role = String($element.data('role') || '');
+            const phone = String($element.data('phone') || '');
+
+            const $container = $(
+                `<div class="official-option">
+                    <div class="official-name fw-bold">${option.text.split(' (')[0]}</div>
+                    <div class="official-details small text-muted">
+                        ${email ? '<i class="bi bi-envelope me-1"></i>' + email : ''}
+                        ${role ? ' | <i class="bi bi-award me-1"></i>' + role.charAt(0).toUpperCase() + role.slice(1) : ''}
+                        ${phone ? ' | <i class="bi bi-telephone me-1"></i>' + phone : ''}
+                    </div>
+                </div>`
+            );
+
+            return $container;
+        }
+
+        // Format for selected option (simplified)
+        function formatOfficialSelection(option) {
+            if (!option.id) {
+                return option.text;
+            }
+            
+            // Return just the name and role for the selected display
+            return option.text.split(' -')[0]; // Remove email from selection display
+        }
+
+        // Enhanced search matching with proper null handling
+        function customOfficialMatcher(params, data) {
+            // If there are no search terms, return all data
+            if ($.trim(params.term) === '') {
+                return data;
+            }
+
+            // Skip if there is no 'element' property
+            if (typeof data.element === 'undefined') {
+                return null;
+            }
+
+            const $element = $(data.element);
+            const searchTerm = params.term.toLowerCase();
+            
+            // Get all searchable data with proper null/undefined handling
+            const name = (data.text || '').toLowerCase();
+            const email = String($element.data('email') || '').toLowerCase();
+            const role = String($element.data('role') || '').toLowerCase();
+            const phone = String($element.data('phone') || '').toLowerCase();
+
+            // Search in name, email, role, or phone
+            if (name.includes(searchTerm) || 
+                email.includes(searchTerm) || 
+                role.includes(searchTerm) ||
+                phone.includes(searchTerm)) {
+                return data;
+            }
+
+            return null;
+        }
+
+        // Form submission confirmation (use jQuery for consistency)
+        $('#assignmentForm').on('submit', function(e) {
+            const selectedOfficialId = $('#user_id').val();
+            const selectedOfficialText = $('#user_id option:selected').text();
+            
+            if (!selectedOfficialId) {
+                e.preventDefault();
+                alert('Please select an official to assign.');
+                $('#user_id').focus();
+                return false;
+            }
+
+            // Show confirmation with official name
+            const officialName = selectedOfficialText.split(' (')[0];
+            if (!confirm(`Assign ${officialName} to this game?`)) {
+                e.preventDefault();
+                return false;
+            }
+        });
+
+    } catch (error) {
+        console.error('Error initializing Select2:', error);
+        // Fallback: Use regular dropdown if Select2 fails
+    }
+
+    // Linked games form handling (vanilla JavaScript)
+    const form = document.getElementById('assignmentForm');
+    const applyToLinkedCheckbox = document.getElementById('applyToLinked');
+    const assignBtn = document.getElementById('assignBtn');
+    
+    if (applyToLinkedCheckbox && assignBtn) {
+        // Define URLs (these need to match your actual routes)
+        const linkedGameUrl = "{{ url_for('game.assign_single_to_group', game_id=game.id) if game.notes and 'Linked Group:' in game.notes else url_for('game.assign_official_to_game', game_id=game.id) }}";
+        const regularUrl = "{{ url_for('game.assign_official_to_game', game_id=game.id) }}";
+        
+        applyToLinkedCheckbox.addEventListener('change', function() {
+            if (this.checked) {
+                assignBtn.innerHTML = '<i class="bi bi-link-45deg"></i> Assign to All Linked Games';
+                assignBtn.classList.remove('btn-primary');
+                assignBtn.classList.add('btn-info');
+                form.action = linkedGameUrl;
+            } else {
+                assignBtn.innerHTML = 'Assign Official';
+                assignBtn.classList.remove('btn-info');
+                assignBtn.classList.add('btn-primary');
+                form.action = regularUrl;
+            }
+        });
+    }
+
+    // Auto-assign form confirmation
+    const autoAssignForm = document.getElementById('autoAssignForm');
+    if (autoAssignForm) {
+        autoAssignForm.addEventListener('submit', function(e) {
+            const numOfficials = document.getElementById('num_officials').value;
+            if (!confirm(`Auto-assign ${numOfficials} officials to this game based on rankings and availability?`)) {
+                e.preventDefault();
+                return false;
+            }
+        });
+    }
+});
+</script>
+
+<style>
+/* Enhanced styles for Select2 dropdown */
+.select2-container--bootstrap-5 .select2-selection {
+    min-height: 48px !important;
+    border-radius: 8px !important;
+    border: 1px solid #dee2e6 !important;
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out !important;
+}
+
+.select2-container--bootstrap-5.select2-container--focus .select2-selection {
+    border-color: #86b7fe !important;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25) !important;
+}
+
+.select2-container--bootstrap-5 .select2-selection__rendered {
+    padding-left: 12px !important;
+    padding-right: 32px !important;
+    line-height: 46px !important;
+    color: #212529 !important;
+}
+
+.select2-container--bootstrap-5 .select2-selection__arrow {
+    height: 46px !important;
+    right: 8px !important;
+}
+
+.select2-dropdown {
+    border-radius: 8px !important;
+    border: 1px solid #dee2e6 !important;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1) !important;
+    z-index: 9999 !important;
+}
+
+.select2-results__option {
+    padding: 12px 16px !important;
+    border-bottom: 1px solid #f8f9fa;
+    transition: background-color 0.15s ease;
+}
+
+.select2-results__option:last-child {
+    border-bottom: none;
+}
+
+.select2-results__option--highlighted {
+    background-color: #0d6efd !important;
+    color: white !important;
+}
+
+.select2-results__option--selected {
+    background-color: #e7f1ff !important;
+    color: #0d6efd !important;
+}
+
+.official-option {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.official-name {
+    color: #2c3e50;
+    margin-bottom: 2px;
+    font-size: 0.95em;
+}
+
+.official-details {
+    color: #6c757d !important;
+    font-size: 0.8em;
+    line-height: 1.2;
+}
+
+/* Mobile responsive adjustments */
+@media (max-width: 768px) {
+    .select2-container {
+        width: 100% !important;
+    }
+    
+    .select2-results__option {
+        padding: 16px !important;
+    }
+    
+    .select2-container--bootstrap-5 .select2-selection {
+        font-size: 16px; /* Prevents zoom on iOS */
+    }
+}
+
+/* Loading state */
+.select2-results__option.loading-results {
+    text-align: center;
+    color: #6c757d;
+    font-style: italic;
+}
+
+/* Error state fallback */
+.searchable-officials.select2-fallback {
+    border: 2px dashed #ffc107;
+    background-color: #fff3cd;
+}
+</style>
+
+{% endblock %}

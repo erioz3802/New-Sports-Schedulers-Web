@@ -1,0 +1,972 @@
+<!-- Chat Widget - Add to base.html before closing body tag -->
+<div id="chatWidget" class="chat-widget">
+    <!-- Chat Toggle Button -->
+    <button id="chatToggle" class="chat-toggle" title="Chat with Susan">
+        <i class="bi bi-chat-dots-fill"></i>
+        <span class="chat-badge" id="chatBadge">💬</span>
+    </button>
+    
+    <!-- Chat Window -->
+    <div id="chatWindow" class="chat-window" style="display: none;">
+        <!-- Chat Header -->
+        <div class="chat-header" id="chatHeader">
+            <div class="d-flex align-items-center">
+                <div class="chat-avatar">
+                    <i class="bi bi-robot"></i>
+                </div>
+                <div class="flex-grow-1">
+                    <h6 class="mb-0">Susan</h6>
+                    <small class="text-muted">Sports Scheduler Assistant</small>
+                </div>
+                <div class="chat-controls">
+                    <div class="dropdown">
+                        <button class="btn btn-sm btn-outline-light dropdown-toggle" type="button" data-bs-toggle="dropdown" title="Resize Options">
+                            <i class="bi bi-arrows-angle-expand"></i>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="#" onclick="chatWidget.setSize('small')">
+                                <i class="bi bi-phone me-2"></i>Small (300×400)
+                            </a></li>
+                            <li><a class="dropdown-item" href="#" onclick="chatWidget.setSize('medium')">
+                                <i class="bi bi-tablet me-2"></i>Medium (450×600)
+                            </a></li>
+                            <li><a class="dropdown-item" href="#" onclick="chatWidget.setSize('large')">
+                                <i class="bi bi-laptop me-2"></i>Large (550×700)
+                            </a></li>
+                            <li><a class="dropdown-item" href="#" onclick="chatWidget.setSize('extra-large')">
+                                <i class="bi bi-display me-2"></i>Extra Large (650×800)
+                            </a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="#" onclick="chatWidget.resetSizeAndPosition()">
+                                <i class="bi bi-arrow-clockwise me-2"></i>Reset to Default
+                            </a></li>
+                        </ul>
+                    </div>
+                    <button id="chatMinimize" class="btn btn-sm btn-outline-light" title="Minimize">
+                        <i class="bi bi-dash"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Chat Messages -->
+        <div id="chatMessages" class="chat-messages">
+            <div class="message bot-message">
+                <div class="message-content">
+                    <div class="message-bubble">
+                        Hey {% if current_user and current_user.is_authenticated %}{{ current_user.first_name|e }}{% else %}there{% endif %}! 👋 I'm Susan, your friendly Sports Scheduler assistant. I'm excited to help you today! 😊
+                    </div>
+                    <div class="message-time">
+                        <small class="text-muted">Just now</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Quick Suggestions -->
+        <div id="chatSuggestions" class="chat-suggestions">
+            <!-- Dynamic suggestions will be loaded here -->
+        </div>
+        
+        <!-- Chat Input -->
+        <div class="chat-input">
+            <div class="input-group">
+                <input type="text" id="chatInput" class="form-control" 
+                       placeholder="Type your message..." 
+                       autocomplete="off">
+                <button id="chatSend" class="btn btn-primary" type="button">
+                    <i class="bi bi-send-fill"></i>
+                </button>
+            </div>
+        </div>
+        
+        <!-- Typing Indicator -->
+        <div id="typingIndicator" class="typing-indicator" style="display: none;">
+            <div class="typing-dots">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+            <small>Susan is typing...</small>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Chat Widget Styles */
+.chat-widget {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 1050;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.chat-toggle {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #007bff, #0056b3);
+    border: none;
+    color: white;
+    font-size: 24px;
+    cursor: pointer;
+    box-shadow: 0 4px 20px rgba(0, 123, 255, 0.4);
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.chat-toggle:hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 25px rgba(0, 123, 255, 0.6);
+}
+
+.chat-badge {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background: #28a745;
+    color: white;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+}
+
+.chat-window {
+    position: absolute;
+    bottom: 80px;
+    right: 0;
+    width: 450px;          /* INCREASED from 380px */
+    height: 600px;         /* INCREASED from 500px */
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border: 1px solid #e0e0e0;
+}
+
+.chat-header {
+    background: linear-gradient(135deg, #007bff, #0056b3);
+    color: white;
+    padding: 15px;
+    border-radius: 15px 15px 0 0;
+}
+
+.chat-avatar {
+    width: 40px;
+    height: 40px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 10px;
+    font-size: 18px;
+}
+
+.chat-messages {
+    flex: 1;
+    padding: 15px;
+    overflow-y: auto;
+    background: #f8f9fa;
+}
+
+.message {
+    margin-bottom: 15px;
+    display: flex;
+}
+
+.bot-message {
+    justify-content: flex-start;
+}
+
+.user-message {
+    justify-content: flex-end;
+}
+
+.message-content {
+    max-width: 80%;
+}
+
+.message-bubble {
+    padding: 12px 16px;
+    border-radius: 18px;
+    word-wrap: break-word;
+    line-height: 1.4;
+}
+
+.bot-message .message-bubble {
+    background: white;
+    border: 1px solid #e0e0e0;
+    border-bottom-left-radius: 4px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.user-message .message-bubble {
+    background: #007bff;
+    color: white;
+    border-bottom-right-radius: 4px;
+}
+
+.message-time {
+    margin-top: 5px;
+    text-align: right;
+}
+
+.user-message .message-time {
+    text-align: left;
+}
+
+.chat-suggestions {
+    padding: 10px 15px;
+    background: white;
+    border-top: 1px solid #e0e0e0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+}
+
+.suggestion-btn {
+    background: #f1f3f4;
+    border: 1px solid #dadce0;
+    border-radius: 20px;
+    padding: 6px 12px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.suggestion-btn:hover {
+    background: #e8f0fe;
+    border-color: #007bff;
+    color: #007bff;
+}
+
+.chat-input {
+    padding: 15px;
+    background: white;
+    border-top: 1px solid #e0e0e0;
+}
+
+.chat-input .form-control {
+    border-radius: 25px;
+    border: 1px solid #dadce0;
+    padding: 10px 15px;
+}
+
+.chat-input .btn {
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: 10px;
+}
+
+.typing-indicator {
+    padding: 10px 15px;
+    background: white;
+    border-top: 1px solid #e0e0e0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.typing-dots {
+    display: flex;
+    gap: 3px;
+}
+
+.typing-dots span {
+    width: 6px;
+    height: 6px;
+    background: #007bff;
+    border-radius: 50%;
+    animation: typing 1.4s infinite;
+}
+
+.typing-dots span:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+.typing-dots span:nth-child(3) {
+    animation-delay: 0.4s;
+}
+
+@keyframes typing {
+    0%, 60%, 100% {
+        transform: translateY(0);
+        opacity: 0.4;
+    }
+    30% {
+        transform: translateY(-10px);
+        opacity: 1;
+    }
+}
+
+/* Mobile Responsive - Disable resize on small screens */
+@media (max-width: 768px) {
+    .chat-window {
+        width: 360px !important;
+        height: 550px !important;
+        bottom: 80px !important;
+        right: -10px !important;
+        left: auto !important;
+        top: auto !important;
+        resize: none;
+    }
+    
+    .resize-handle {
+        display: none; /* Hide resize handles on mobile */
+    }
+    
+    .chat-header {
+        cursor: default; /* Disable dragging on mobile */
+    }
+    
+    .chat-widget {
+        bottom: 15px;
+        right: 15px;
+    }
+}
+
+/* Resize mode visual feedback */
+.chat-window.resize-mode {
+    border: 2px dashed #007bff;
+    box-shadow: 0 0 20px rgba(0, 123, 255, 0.3);
+}
+
+.chat-window.resize-mode .resize-handle {
+    background-color: rgba(0, 123, 255, 0.2);
+}
+
+/* Animation for smooth resizing */
+.chat-window:not(.resizing) {
+    transition: width 0.2s ease, height 0.2s ease;
+}
+
+/* Scrollbar Styling */
+.chat-messages::-webkit-scrollbar {
+    width: 6px;
+}
+
+.chat-messages::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+}
+
+.chat-messages::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 10px;
+}
+
+.chat-messages::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+}
+
+/* Animation for window opening */
+.chat-window.opening {
+    animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+</style>
+
+<script>
+class ChatWidget {
+    constructor() {
+        this.isOpen = false;
+        this.isTyping = false;
+        this.isDragging = false;
+        this.isResizing = false;
+        this.dragOffset = { x: 0, y: 0 };
+        this.resizeData = { handle: null, startX: 0, startY: 0, startWidth: 0, startHeight: 0 };
+        this.init();
+    }
+    
+    init() {
+        this.bindEvents();
+        this.loadInitialSuggestions();
+        this.loadSavedSize();
+    }
+    
+    bindEvents() {
+        // Existing events
+        document.getElementById('chatToggle').addEventListener('click', () => {
+            this.toggleChat();
+        });
+        
+        document.getElementById('chatMinimize').addEventListener('click', () => {
+            this.closeChat();
+        });
+        
+        document.getElementById('chatSend').addEventListener('click', () => {
+            this.sendMessage();
+        });
+        
+        document.getElementById('chatInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                this.sendMessage();
+            }
+        });
+        
+        // NEW: Drag and resize events
+        this.bindDragEvents();
+        this.bindResizeEvents();
+        
+        // Resize button
+        document.getElementById('chatResize')?.addEventListener('click', () => {
+            this.toggleResizeMode();
+        });
+        
+        // NEW: Reset button
+        document.getElementById('chatReset')?.addEventListener('click', () => {
+            this.resetSizeAndPosition();
+        });
+    }
+    
+    bindDragEvents() {
+        const header = document.getElementById('chatHeader');
+        const chatWindow = document.getElementById('chatWindow');
+        
+        header.addEventListener('mousedown', (e) => {
+            if (e.target.closest('.chat-controls')) return; // Don't drag when clicking controls
+            
+            this.isDragging = true;
+            const rect = chatWindow.getBoundingClientRect();
+            this.dragOffset.x = e.clientX - rect.left;
+            this.dragOffset.y = e.clientY - rect.top;
+            
+            document.addEventListener('mousemove', this.handleDrag.bind(this));
+            document.addEventListener('mouseup', this.stopDrag.bind(this));
+            
+            chatWindow.style.transition = 'none';
+            e.preventDefault();
+        });
+    }
+    
+    bindResizeEvents() {
+        const resizeHandles = document.querySelectorAll('.resize-handle');
+        
+        resizeHandles.forEach(handle => {
+            handle.addEventListener('mousedown', (e) => {
+                this.startResize(e, handle);
+            });
+        });
+    }
+    
+    handleDrag(e) {
+        if (!this.isDragging) return;
+        
+        const chatWindow = document.getElementById('chatWindow');
+        const viewport = {
+            width: window.innerWidth,
+            height: window.innerHeight
+        };
+        
+        let newX = e.clientX - this.dragOffset.x;
+        let newY = e.clientY - this.dragOffset.y;
+        
+        // Keep window in viewport
+        const rect = chatWindow.getBoundingClientRect();
+        newX = Math.max(0, Math.min(newX, viewport.width - rect.width));
+        newY = Math.max(0, Math.min(newY, viewport.height - rect.height));
+        
+        chatWindow.style.left = newX + 'px';
+        chatWindow.style.top = newY + 'px';
+        chatWindow.style.right = 'auto';
+        chatWindow.style.bottom = 'auto';
+    }
+    
+    stopDrag() {
+        this.isDragging = false;
+        document.removeEventListener('mousemove', this.handleDrag);
+        document.removeEventListener('mouseup', this.stopDrag);
+        
+        const chatWindow = document.getElementById('chatWindow');
+        chatWindow.style.transition = '';
+        
+        this.savePosition();
+    }
+    
+    startResize(e, handle) {
+        this.isResizing = true;
+        const chatWindow = document.getElementById('chatWindow');
+        const rect = chatWindow.getBoundingClientRect();
+        
+        this.resizeData = {
+            handle: handle.className,
+            startX: e.clientX,
+            startY: e.clientY,
+            startWidth: rect.width,
+            startHeight: rect.height,
+            startLeft: rect.left,
+            startTop: rect.top
+        };
+        
+        document.addEventListener('mousemove', this.handleResize.bind(this));
+        document.addEventListener('mouseup', this.stopResize.bind(this));
+        
+        e.preventDefault();
+        e.stopPropagation();
+    }
+    
+    handleResize(e) {
+        if (!this.isResizing) return;
+        
+        const chatWindow = document.getElementById('chatWindow');
+        const deltaX = e.clientX - this.resizeData.startX;
+        const deltaY = e.clientY - this.resizeData.startY;
+        
+        let newWidth = this.resizeData.startWidth;
+        let newHeight = this.resizeData.startHeight;
+        let newLeft = this.resizeData.startLeft;
+        let newTop = this.resizeData.startTop;
+        
+        // Handle different resize directions
+        if (this.resizeData.handle.includes('right')) {
+            newWidth = Math.max(300, Math.min(800, this.resizeData.startWidth + deltaX));
+        }
+        if (this.resizeData.handle.includes('left')) {
+            newWidth = Math.max(300, Math.min(800, this.resizeData.startWidth - deltaX));
+            newLeft = this.resizeData.startLeft + (this.resizeData.startWidth - newWidth);
+        }
+        if (this.resizeData.handle.includes('bottom')) {
+            newHeight = Math.max(400, Math.min(window.innerHeight * 0.9, this.resizeData.startHeight + deltaY));
+        }
+        if (this.resizeData.handle.includes('top')) {
+            newHeight = Math.max(400, Math.min(window.innerHeight * 0.9, this.resizeData.startHeight - deltaY));
+            newTop = this.resizeData.startTop + (this.resizeData.startHeight - newHeight);
+        }
+        
+        // Apply new dimensions
+        chatWindow.style.width = newWidth + 'px';
+        chatWindow.style.height = newHeight + 'px';
+        
+        if (this.resizeData.handle.includes('left') || this.resizeData.handle.includes('top')) {
+            chatWindow.style.left = newLeft + 'px';
+            chatWindow.style.top = newTop + 'px';
+            chatWindow.style.right = 'auto';
+            chatWindow.style.bottom = 'auto';
+        }
+    }
+    
+    stopResize() {
+        this.isResizing = false;
+        document.removeEventListener('mousemove', this.handleResize);
+        document.removeEventListener('mouseup', this.stopResize);
+        
+        this.saveSize();
+    }
+
+    savePosition() {
+        try {
+            const chatWindow = document.getElementById('chatWindow');
+            const rect = chatWindow.getBoundingClientRect();
+        
+            const positionData = {
+                left: rect.left,
+                top: rect.top,
+                width: rect.width,
+                height: rect.height
+            };
+        
+            localStorage.setItem('susanChatPosition', JSON.stringify(positionData));
+        } catch (e) {
+            console.log('Could not save chat position');
+        }
+    }
+
+    saveSize() {
+        try {
+            const chatWindow = document.getElementById('chatWindow');
+            const rect = chatWindow.getBoundingClientRect();
+        
+            const sizeData = {
+                width: rect.width,
+                height: rect.height,
+                left: rect.left,
+                top: rect.top
+            };
+        
+            localStorage.setItem('susanChatSize', JSON.stringify(sizeData));
+        } catch (e) {
+            console.log('Could not save chat size');
+        }
+    }
+
+    setSize(size) {
+        const chatWindow = document.getElementById('chatWindow');
+        if (!chatWindow) return;
+    
+        // Define size configurations
+        const sizeConfigs = {
+            'small': { width: '300px', height: '400px' },
+            'medium': { width: '450px', height: '600px' },
+            'large': { width: '550px', height: '700px' },
+            'extra-large': { width: '650px', height: '800px' }
+        };
+    
+        // Get the size config, default to medium if not found
+        const config = sizeConfigs[size] || sizeConfigs['medium'];
+    
+        // Apply the new size
+        chatWindow.style.width = config.width;
+        chatWindow.style.height = config.height;
+    
+        // Save the new size
+        this.saveSize();
+    
+        // Visual feedback
+        this.addMessage(`Chat resized to ${size}`, 'system');
+    }
+    
+    toggleResizeMode() {
+        const chatWindow = document.getElementById('chatWindow');
+        const resizeBtn = document.getElementById('chatResize');
+        
+        chatWindow.classList.toggle('resize-mode');
+        
+        if (chatWindow.classList.contains('resize-mode')) {
+            resizeBtn.innerHTML = '<i class="bi bi-arrows-angle-contract"></i>';
+            resizeBtn.title = 'Exit Resize Mode';
+        } else {
+            resizeBtn.innerHTML = '<i class="bi bi-arrows-angle-expand"></i>';
+            resizeBtn.title = 'Resize Chat';
+        }
+    }
+    
+    resetSizeAndPosition() {
+        const chatWindow = document.getElementById('chatWindow');
+        
+        // Reset to default size and position
+        chatWindow.style.width = '450px';
+        chatWindow.style.height = '600px';
+        chatWindow.style.right = '0';
+        chatWindow.style.bottom = '80px';
+        chatWindow.style.left = 'auto';
+        chatWindow.style.top = 'auto';
+        
+        // Clear saved preferences
+        localStorage.removeItem('susanChatSize');
+        
+        // Add visual feedback
+        chatWindow.style.transition = 'all 0.3s ease';
+        chatWindow.style.transform = 'scale(1.05)';
+        
+        setTimeout(() => {
+            chatWindow.style.transform = 'scale(1)';
+            setTimeout(() => {
+                chatWindow.style.transition = '';
+            }, 300);
+        }, 100);
+        
+        console.log('Susan has been reset to default size and position!');
+    }
+
+    resetSizeAndPosition() {
+    // ... your existing code ...
+    console.log('Susan has been reset to default size and position!');
+}
+
+// ADD THE NEW setSize METHOD RIGHT HERE - DON'T REPLACE ANYTHING
+
+setSize(size) {
+    const chatWindow = document.getElementById('chatWindow');
+    if (!chatWindow) return;
+    
+    // Define size configurations
+    const sizeConfigs = {
+        'small': { width: '300px', height: '400px' },
+        'medium': { width: '450px', height: '600px' },
+        'large': { width: '550px', height: '700px' },
+        'extra-large': { width: '650px', height: '800px' }
+    };
+    
+    // Get the size config, default to medium if not found
+    const config = sizeConfigs[size] || sizeConfigs['medium'];
+    
+    // Apply the new size
+    chatWindow.style.width = config.width;
+    chatWindow.style.height = config.height;
+    
+    // Make sure it stays in viewport
+    this.ensureInViewport();
+    
+    // Save the new size
+    this.saveSize();
+    
+    // Visual feedback
+    this.addMessage(`Chat resized to ${size}`, 'system');
+}
+
+ensureInViewport() {
+    const chatWindow = document.getElementById('chatWindow');
+    const rect = chatWindow.getBoundingClientRect();
+    const viewport = {
+        width: window.innerWidth,
+        height: window.innerHeight
+    };
+    
+    // Check if window is outside viewport and adjust
+    if (rect.right > viewport.width || rect.bottom > viewport.height) {
+        this.resetToSafePosition();
+    }
+}
+
+loadSavedSize() {
+    // ... your existing code continues ...
+}
+    
+    loadSavedSize() {
+        try {
+            const saved = localStorage.getItem('susanChatSize');
+            if (saved) {
+                const size = JSON.parse(saved);
+                const chatWindow = document.getElementById('chatWindow');
+                
+                // Validate saved dimensions
+                const validWidth = Math.max(300, Math.min(800, size.width));
+                const validHeight = Math.max(400, Math.min(window.innerHeight * 0.9, size.height));
+                
+                chatWindow.style.width = validWidth + 'px';
+                chatWindow.style.height = validHeight + 'px';
+                
+                // Only apply position if it's safe and visible
+                if (size.left >= 0 && size.top >= 0 &&
+                    size.left + validWidth <= window.innerWidth && 
+                    size.top + validHeight <= window.innerHeight) {
+                    chatWindow.style.left = size.left + 'px';
+                    chatWindow.style.top = size.top + 'px';
+                    chatWindow.style.right = 'auto';
+                    chatWindow.style.bottom = 'auto';
+                } else {
+                    // Reset to safe position if saved position is off-screen
+                    this.resetToSafePosition();
+                }
+            }
+        } catch (e) {
+            console.log('Could not load saved chat size, using defaults');
+            this.resetToSafePosition();
+        }
+    }
+    
+    resetToSafePosition() {
+        const chatWindow = document.getElementById('chatWindow');
+        chatWindow.style.right = '0';
+        chatWindow.style.bottom = '80px';
+        chatWindow.style.left = 'auto';
+        chatWindow.style.top = 'auto';
+    }
+    
+    toggleChat() {
+        const chatWindow = document.getElementById('chatWindow');
+        const chatBadge = document.getElementById('chatBadge');
+        
+        if (this.isOpen) {
+            this.closeChat();
+        } else {
+            this.openChat();
+        }
+    }
+    
+    openChat() {
+        const chatWindow = document.getElementById('chatWindow');
+        const chatInput = document.getElementById('chatInput');
+        
+        chatWindow.style.display = 'flex';
+        chatWindow.classList.add('opening');
+        
+        setTimeout(() => {
+            chatInput.focus();
+            chatWindow.classList.remove('opening');
+        }, 300);
+        
+        this.isOpen = true;
+        
+        // Hide notification badge
+        document.getElementById('chatBadge').style.display = 'none';
+    }
+    
+    closeChat() {
+        document.getElementById('chatWindow').style.display = 'none';
+        this.isOpen = false;
+    }
+    
+    async sendMessage() {
+        const input = document.getElementById('chatInput');
+        const message = input.value.trim();
+        
+        if (!message) return;
+        
+        // Add user message to chat
+        this.addMessage(message, 'user');
+        
+        // Clear input
+        input.value = '';
+        
+        // Show typing indicator
+        this.showTyping();
+        
+        try {
+            // Send to chatbot API
+            const response = await fetch('/api/chat', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ message: message })
+            });
+            
+            const data = await response.json();
+            
+            // Hide typing indicator
+            this.hideTyping();
+            
+            // Add bot response
+            setTimeout(() => {
+                this.addMessage(data.response, 'bot');
+                
+                // Update suggestions if provided
+                if (data.suggestions) {
+                    this.updateSuggestions(data.suggestions);
+                }
+            }, 500);
+            
+        } catch (error) {
+            this.hideTyping();
+            this.addMessage("I'm sorry, I'm having trouble connecting right now. Please try again.", 'bot');
+        }
+    }
+    
+    addMessage(content, type) {
+        const messagesContainer = document.getElementById('chatMessages');
+        const messageDiv = document.createElement('div');
+        
+        if (type === 'system') {
+            messageDiv.className = 'message system-message';
+            messageDiv.style.textAlign = 'center';
+            messageDiv.style.margin = '10px 0';
+            messageDiv.innerHTML = `
+                <div style="background: #e3f2fd; color: #1976d2; padding: 8px 12px; border-radius: 15px; font-size: 12px; display: inline-block;">
+                    ${content}
+                </div>
+            `;
+        } else {
+            messageDiv.className = `message ${type}-message`;
+            
+            const now = new Date();
+            const timeString = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            
+            messageDiv.innerHTML = `
+                <div class="message-content">
+                    <div class="message-bubble">${this.formatMessage(content)}</div>
+                    <div class="message-time">
+                        <small class="text-muted">${timeString}</small>
+                    </div>
+                </div>
+            `;
+        }
+        
+        messagesContainer.appendChild(messageDiv);
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+    
+    formatMessage(content) {
+        // Convert markdown-style formatting to HTML
+        return content
+            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+            .replace(/\*(.*?)\*/g, '<em>$1</em>')
+            .replace(/`(.*?)`/g, '<code>$1</code>')
+            .replace(/\n/g, '<br>');
+    }
+    
+    showTyping() {
+        document.getElementById('typingIndicator').style.display = 'flex';
+        this.isTyping = true;
+    }
+    
+    hideTyping() {
+        document.getElementById('typingIndicator').style.display = 'none';
+        this.isTyping = false;
+    }
+    
+    updateSuggestions(suggestions) {
+        const suggestionsContainer = document.getElementById('chatSuggestions');
+        suggestionsContainer.innerHTML = '';
+        
+        suggestions.forEach(suggestion => {
+            const btn = document.createElement('button');
+            btn.className = 'suggestion-btn';
+            btn.textContent = suggestion;
+            btn.addEventListener('click', () => {
+                document.getElementById('chatInput').value = suggestion;
+                this.sendMessage();
+            });
+            suggestionsContainer.appendChild(btn);
+        });
+    }
+    
+    loadInitialSuggestions() {
+        // Load role-based initial suggestions (SAFE)
+        let userRole = 'guest';
+        try {
+            // Safely get user role from page context
+            const roleElement = document.querySelector('[data-user-role]');
+            if (roleElement) {
+                userRole = roleElement.getAttribute('data-user-role');
+            }
+        } catch (e) {
+            // Fallback to guest
+            userRole = 'guest';
+        }
+        
+        const roleSuggestions = {
+            'administrator': ['How do I add users?', 'Show me bulk operations', 'Game management help'],
+            'superadmin': ['System administration', 'User management', 'Advanced reports'],
+            'assigner': ['How to assign officials?', 'Create new games', 'Check for conflicts'],
+            'official': ['Show my assignments', 'Set availability', 'Check earnings'],
+            'viewer': ['View reports', 'League information', 'Game schedules'],
+            'guest': ['How do I log in?', 'What can different roles do?', 'Help']
+        };
+        
+        this.updateSuggestions(roleSuggestions[userRole] || roleSuggestions['guest']);
+    }
+    
+    autoResizeInput(input) {
+        // Auto-resize functionality if needed
+        input.style.height = 'auto';
+        input.style.height = input.scrollHeight + 'px';
+    }
+}
+
+// Initialize chat widget when DOM is loaded
+document.addEventListener('DOMContentLoaded', () => {
+    if (document.getElementById('chatWidget')) {
+        window.chatWidget = new ChatWidget();
+    }
+});
+</script>

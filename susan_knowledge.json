@@ -1,0 +1,373 @@
+{
+    "version": "1.0",
+    "last_updated": "2025-09-22T16:59:12.054577",
+    "application_features": {
+        "detected_features": {},
+        "file_structure": {},
+        "available_features": {
+            "user_management": true,
+            "authentication": true,
+            "league_management": true,
+            "game_scheduling": true,
+            "location_management": true,
+            "reporting": true,
+            "chatbot": true,
+            "api_endpoints": true,
+            "database_available": false
+        },
+        "feature_detection_date": "2025-09-22T16:59:12.054577"
+    },
+    "user_guides": {},
+    "troubleshooting": {
+        "login_issues": {
+            "symptoms": [
+                "Cannot log in",
+                "Invalid credentials",
+                "Password not working"
+            ],
+            "solutions": [
+                "Verify you're using your email address (not username)",
+                "Check if caps lock is enabled",
+                "Try clearing your browser cache",
+                "Contact your administrator for password reset",
+                "Ensure you're using the correct URL"
+            ]
+        },
+        "page_not_loading": {
+            "symptoms": [
+                "Slow loading",
+                "Page not responding",
+                "Timeouts"
+            ],
+            "solutions": [
+                "Refresh the page (Ctrl+F5 or Cmd+Shift+R)",
+                "Check your internet connection",
+                "Try a different browser",
+                "Clear browser cache and cookies",
+                "Contact system administrator if issues persist"
+            ]
+        },
+        "assignment_problems": {
+            "symptoms": [
+                "Cannot assign officials",
+                "Assignment conflicts",
+                "Officials not showing up"
+            ],
+            "solutions": [
+                "Ensure the game status is \"Released\"",
+                "Check official availability for that date/time",
+                "Verify no 2-hour buffer conflicts exist",
+                "Confirm officials are members of the league",
+                "Check if officials have proper rankings set"
+            ]
+        }
+    },
+    "changelog": [],
+    "faq": {},
+    "workflow_guides": {},
+    "system_requirements": {},
+    "api_endpoints": {
+        "/": {
+            "function": "index",
+            "file": "Phase_3_app.py",
+            "description": "Main dashboard - role-based landing page",
+            "discovered": "2025-09-22T16:59:12.044411"
+        },
+        "/dashboard": {
+            "function": "dashboard",
+            "file": "bulk_routes.py",
+            "description": "Main bulk operations dashboard",
+            "discovered": "2025-09-22T16:59:12.054577"
+        },
+        "/profile": {
+            "function": "profile",
+            "file": "Phase_3_app.py",
+            "description": "User profile management",
+            "discovered": "2025-09-22T16:59:12.044411"
+        },
+        "/help": {
+            "function": "help_page",
+            "file": "bulk_routes.py",
+            "description": "Bulk operations help and documentation",
+            "discovered": "2025-09-22T16:59:12.054577"
+        },
+        "/api/chatbot": {
+            "function": "chatbot_api",
+            "file": "app_Phase_4.py",
+            "description": "API endpoint for chatbot Susan",
+            "discovered": "2025-09-22T16:59:12.044411"
+        },
+        "/admin": {
+            "function": "admin_redirect",
+            "file": "Phase_3_app.py",
+            "description": "Redirect to admin dashboard",
+            "discovered": "2025-09-22T16:59:12.044411"
+        },
+        "/games": {
+            "function": "games_placeholder",
+            "file": "Phase_3_app.py",
+            "description": "Games management placeholder",
+            "discovered": "2025-09-22T16:59:12.044411"
+        },
+        "/leagues": {
+            "function": "leagues_redirect",
+            "file": "Phase_3_app.py",
+            "description": "Redirect to league dashboard",
+            "discovered": "2025-09-22T16:59:12.044411"
+        },
+        "/reports": {
+            "function": "reports_placeholder",
+            "file": "Phase_3_app.py",
+            "description": "Reports placeholder",
+            "discovered": "2025-09-22T16:59:12.044411"
+        },
+        "/profile/edit": {
+            "function": "edit_profile",
+            "file": "auth_routes.py",
+            "description": "Edit user profile",
+            "discovered": "2025-09-22T16:59:12.054577"
+        },
+        "/locations": {
+            "function": "locations_redirect",
+            "file": "Phase_3_app.py",
+            "description": "Redirect to location management",
+            "discovered": "2025-09-22T16:59:12.044411"
+        },
+        "/add_league": {
+            "function": "add_league",
+            "file": "location.py",
+            "description": "Add league placeholder",
+            "discovered": "2025-09-22T16:59:12.051767"
+        },
+        "/manage_locations": {
+            "function": "manage_locations",
+            "file": "location.py",
+            "description": "Location management placeholder",
+            "discovered": "2025-09-22T16:59:12.051767"
+        },
+        "/api/chat": {
+            "function": "chat_api",
+            "file": "chatbot_routes.py",
+            "description": "Safe chatbot API endpoint with comprehensive error handling",
+            "discovered": "2025-09-22T16:59:12.054577"
+        },
+        "/help/chat": {
+            "function": "chat_help",
+            "file": "####chatbot_routes.py",
+            "description": "Help page for chatbot features - no login required",
+            "discovered": "2025-09-22T16:59:12.054577"
+        },
+        "/help/quick-start": {
+            "function": "quick_start",
+            "file": "####chatbot_routes.py",
+            "description": "Quick start guide based on user role - no login required",
+            "discovered": "2025-09-22T16:59:12.054577"
+        },
+        "/manage": {
+            "function": "manage_games",
+            "file": "####game_routes.py",
+            "description": "Game management page with filtering",
+            "discovered": "2025-09-22T16:59:12.054577"
+        },
+        "/add": {
+            "function": "add_game",
+            "file": "####game_routes.py",
+            "description": "Add new game",
+            "discovered": "2025-09-22T16:59:12.054577"
+        },
+        "/<int:game_id>/edit": {
+            "function": "edit_game",
+            "file": "####game_routes.py",
+            "description": "Edit game details",
+            "discovered": "2025-09-22T16:59:12.054577"
+        },
+        "/<int:game_id>/change-status": {
+            "function": "change_game_status",
+            "file": "####game_routes.py",
+            "description": "Change game status",
+            "discovered": "2025-09-22T16:59:12.054577"
+        },
+        "/<int:game_id>/assign": {
+            "function": "assign_officials",
+            "file": "####game_routes.py",
+            "description": "Assign officials to game",
+            "discovered": "2025-09-22T16:59:12.054577"
+        },
+        "/<int:game_id>/assign-official": {
+            "function": "assign_official_to_game",
+            "file": "####game_routes.py",
+            "description": "Assign a specific official to a game",
+            "discovered": "2025-09-22T16:59:12.054577"
+        },
+        "/assignment/<int:assignment_id>/remove": {
+            "function": "remove_assignment",
+            "file": "####game_routes.py",
+            "description": "Remove official assignment",
+            "discovered": "2025-09-22T16:59:12.054577"
+        },
+        "/api/games": {
+            "function": "api_games",
+            "file": "####game_routes.py",
+            "description": "API endpoint for game data",
+            "discovered": "2025-09-22T16:59:12.054577"
+        },
+        "/api/league/<int:league_id>/fee": {
+            "function": "api_league_fee",
+            "file": "####game_routes.py",
+            "description": "Get default fee for a league",
+            "discovered": "2025-09-22T16:59:12.054577"
+        },
+        "/api/location/<int:location_id>/fields": {
+            "function": "api_location_fields",
+            "file": "####game_routes.py",
+            "description": "Get field information for a location",
+            "discovered": "2025-09-22T16:59:12.054577"
+        },
+        "/games/upload": {
+            "function": "upload_games",
+            "file": "bulk_routes.py",
+            "description": "Upload and process games bulk file - ENHANCED DEBUG VERSION",
+            "discovered": "2025-09-22T16:59:12.054577"
+        },
+        "/games/template": {
+            "function": "download_games_template",
+            "file": "###bulk_routes.py",
+            "description": "Download CSV template for games upload",
+            "discovered": "2025-09-22T16:59:12.054577"
+        },
+        "/users/upload": {
+            "function": "upload_users",
+            "file": "###bulk_routes.py",
+            "description": "Upload users from CSV file",
+            "discovered": "2025-09-22T16:59:12.054577"
+        },
+        "/users/template": {
+            "function": "download_users_template",
+            "file": "###bulk_routes.py",
+            "description": "Download CSV template for users upload",
+            "discovered": "2025-09-22T16:59:12.054577"
+        },
+        "/results/<upload_id>": {
+            "function": "upload_results",
+            "file": "###bulk_routes.py",
+            "description": "Show results of bulk upload operation",
+            "discovered": "2025-09-22T16:59:12.054577"
+        },
+        "/manage-users": {
+            "function": "manage_users",
+            "file": "admin_routes.py",
+            "description": "User management page with search and filtering",
+            "discovered": "2025-09-22T16:59:12.054577"
+        },
+        "/users/add": {
+            "function": "add_user",
+            "file": "admin_routes.py",
+            "description": "Add new user form",
+            "discovered": "2025-09-22T16:59:12.054577"
+        },
+        "/users/<int:user_id>/edit": {
+            "function": "edit_user",
+            "file": "admin_routes.py",
+            "description": "Edit user details",
+            "discovered": "2025-09-22T16:59:12.054577"
+        },
+        "/users/<int:user_id>/toggle-status": {
+            "function": "toggle_user_status",
+            "file": "admin_routes.py",
+            "description": "Toggle user active/inactive status",
+            "discovered": "2025-09-22T16:59:12.054577"
+        },
+        "/users/<int:user_id>/delete": {
+            "function": "delete_user",
+            "file": "admin_routes.py",
+            "description": "Delete user (superadmin only)",
+            "discovered": "2025-09-22T16:59:12.054577"
+        },
+        "/api/user-stats": {
+            "function": "user_stats_api",
+            "file": "admin_routes.py",
+            "description": "API endpoint for user statistics",
+            "discovered": "2025-09-22T16:59:12.054577"
+        },
+        "/rankings/league/<int:league_id>": {
+            "function": "league_rankings",
+            "file": "admin_routes.py",
+            "description": "View/edit rankings for a specific league",
+            "discovered": "2025-09-22T16:59:12.054577"
+        },
+        "/rankings/delete/<int:ranking_id>": {
+            "function": "delete_ranking",
+            "file": "admin_routes.py",
+            "description": "Delete an official ranking",
+            "discovered": "2025-09-22T16:59:12.054577"
+        },
+        "/rankings/statistics": {
+            "function": "ranking_statistics",
+            "file": "admin_routes.py",
+            "description": "View ranking statistics and analytics",
+            "discovered": "2025-09-22T16:59:12.054577"
+        },
+        "/login": {
+            "function": "login",
+            "file": "auth_routes_Phase_1.py",
+            "description": "login endpoint",
+            "discovered": "2025-09-22T16:59:12.054577"
+        },
+        "/logout": {
+            "function": "logout",
+            "file": "auth_routes_Phase_1.py",
+            "description": "logout endpoint",
+            "discovered": "2025-09-22T16:59:12.054577"
+        },
+        "/games/templates": {
+            "function": "game_templates",
+            "file": "bulk_routes.py",
+            "description": "Template download page for games",
+            "discovered": "2025-09-22T16:59:12.054577"
+        },
+        "/games/template/download": {
+            "function": "download_game_template",
+            "file": "bulk_routes.py",
+            "description": "Generate and download dynamic game template",
+            "discovered": "2025-09-22T16:59:12.054577"
+        },
+        "/games/preview": {
+            "function": "preview_games_upload",
+            "file": "bulk_routes.py",
+            "description": "Preview games upload without saving to database",
+            "discovered": "2025-09-22T16:59:12.054577"
+        },
+        "/export/games": {
+            "function": "export_games",
+            "file": "bulk_routes.py",
+            "description": "Export existing games to Excel template format",
+            "discovered": "2025-09-22T16:59:12.054577"
+        },
+        "/api/leagues": {
+            "function": "api_admin_leagues",
+            "file": "bulk_routes.py",
+            "description": "Get admin's accessible leagues for AJAX calls",
+            "discovered": "2025-09-22T16:59:12.054577"
+        },
+        "/api/locations": {
+            "function": "api_all_locations",
+            "file": "bulk_routes.py",
+            "description": "Get all locations for AJAX calls",
+            "discovered": "2025-09-22T16:59:12.054577"
+        },
+        "/api/officials": {
+            "function": "api_available_officials",
+            "file": "bulk_routes.py",
+            "description": "Get admin's available officials for AJAX calls",
+            "discovered": "2025-09-22T16:59:12.054577"
+        },
+        "/chatbot/help": {
+            "function": "chatbot_help",
+            "file": "chatbot_routes.py",
+            "description": "Chatbot help page",
+            "discovered": "2025-09-22T16:59:12.054577"
+        }
+    },
+    "database_schema": {},
+    "safe_mode": true
+}

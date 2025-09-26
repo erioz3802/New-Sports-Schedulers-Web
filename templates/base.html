@@ -1,0 +1,153 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Sports Scheduler{% endblock %}</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.10.0/font/bootstrap-icons.min.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/custom.css') }}" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.1.0-rc.0/css/select2.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/select2-bootstrap-5-theme/1.3.0/select2-bootstrap-5-theme.min.css" rel="stylesheet">
+    {% if current_user and current_user.is_authenticated %}
+    <meta data-user-role="{{ current_user.role|e }}" id="userRoleContext">
+    {% else %}
+    <meta data-user-role="guest" id="userRoleContext">
+    {% endif %}
+</head>
+<body>
+    
+    {% if current_user and current_user.is_authenticated %}
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="{{ url_for('index') }}">
+                <i class="bi bi-trophy-fill me-2"></i>Sports Scheduler
+            </a>
+            
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        {% if current_user.role in ['administrator', 'superadmin', 'assigner'] %}
+                        <a class="nav-link" href="{{ url_for('admin.dashboard') }}">
+                            <i class="bi bi-house"></i> Dashboard
+                        </a>
+                        {% else %}
+                        <a class="nav-link" href="{{ url_for('index') }}">
+                            <i class="bi bi-house"></i> Dashboard
+                        </a>
+                        {% endif %}
+                    </li>
+                                    
+                    {% if current_user.role in ['administrator', 'superadmin', 'assigner'] %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('league.manage_leagues') }}">
+                            <i class="bi bi-flag"></i> Leagues
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('league.manage_locations') }}">
+                            <i class="bi bi-geo-alt"></i> Locations
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('game.manage_games') }}">
+                            <i class="bi bi-calendar-event"></i> Games
+                        </a>
+                    </li>
+                    {% endif %}
+        
+                    <li class="nav-item">
+                        <a class="nav-link" href="/official/assignments">
+                            <i class="bi bi-clipboard-list"></i> My Assignments
+                        </a>
+                    </li>
+                   
+                   
+                    <!-- ADMIN SECTION WITH BULK OPERATIONS -->
+                    {% if current_user.role in ['administrator', 'superadmin'] %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('admin.manage_users') }}">
+                                <i class="bi bi-people"></i> Users
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('admin.dashboard') }}">
+                                <i class="bi bi-speedometer2"></i> Admin Panel
+                            </a>
+                        </li>
+    
+                        <!-- SUPERADMIN ONLY: League Assignments -->
+                        {% if current_user.role == 'superadmin' %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('admin.league_assignments') }}">
+                                <i class="bi bi-diagram-3"></i> League Assignments
+                            </a>
+                        </li>
+                        {% endif %}
+    
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('bulk.dashboard') }}">
+                                <i class="bi bi-upload"></i> Bulk Operations
+                            </a>
+                        </li>
+                    {% endif %}
+                    
+                </ul>
+                
+                <div class="navbar-nav ms-auto">
+                    <div class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
+                            <i class="bi bi-person-circle me-1"></i>{{ current_user.first_name }}
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="{{ url_for('profile') }}">Profile</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('help_page') }}">Help</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{{ url_for('auth.logout') }}">Logout</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('report.dashboard') }}">Reports</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+    {% endif %}
+    
+    <div class="container mt-3">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ 'danger' if category == 'error' else 'warning' if category == 'warning' else 'success' if category == 'success' else 'info' }} alert-dismissible fade show">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
+    
+    <main class="container mt-4">
+        {% block content %}{% endblock %}
+    </main>
+    
+    <!-- Scripts at bottom of body for proper loading order -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Select2 JavaScript - Must load AFTER jQuery -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.1.0-rc.0/js/select2.min.js"></script>
+
+    <!-- Your custom JavaScript -->
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+
+    <!-- Custom scripts block for individual pages -->
+    {% block scripts %}
+    {% endblock %}
+
+</body>
+</html>
+

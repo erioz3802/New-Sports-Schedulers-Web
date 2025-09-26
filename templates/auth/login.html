@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block title %}Login - Sports Scheduler{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header text-center bg-primary text-white">
+                <h3><i class="bi bi-trophy-fill me-2"></i>Sports Scheduler</h3>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    {{ form.hidden_tag() }}
+                    
+                    <div class="mb-3">
+                        <label for="email" class="form-label">Email</label>
+                        <input type="email" class="form-control" id="email" name="email" required>
+                        {% if form.errors.get('email') %}
+                            <div class="text-danger">
+                                {% for error in form.errors.email %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="password" class="form-label">Password</label>
+                        <input type="password" class="form-control" id="password" name="password" required>
+                        {% if form.errors.get('password') %}
+                            <div class="text-danger">
+                                {% for error in form.errors.password %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" class="form-check-input" id="remember_me" name="remember_me">
+                        <label class="form-check-label" for="remember_me">Remember Me</label>
+                    </div>                    
+                    <button type="submit" class="btn btn-primary w-100">Login</button>
+                </form>
+                                
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

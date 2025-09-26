@@ -1,0 +1,130 @@
+<!-- templates/bulk/upload_games.html -->
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="bi bi-upload me-2"></i>Upload Games</h2>
+                <a href="{{ url_for('bulk.dashboard') }}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left me-1"></i>Back to Dashboard
+                </a>
+            </div>
+
+            <div class="row">
+                <div class="col-lg-8">
+                    <div class="card">
+                        <div class="card-header bg-primary text-white">
+                            <h5><i class="bi bi-file-earmark-excel me-2"></i>Upload Excel File</h5>
+                        </div>
+                        <div class="card-body">
+                            <form method="POST" enctype="multipart/form-data" id="uploadForm">
+                                <div class="mb-3">
+                                    <label for="file" class="form-label">Select Excel File</label>
+                                    <input type="file" class="form-control" id="file" name="file" 
+                                           accept=".xlsx,.xls" required>
+                                    <div class="form-text">
+                                        Accepted formats: .xlsx, .xls | Maximum size: 16MB
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label">Processing Mode</label>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="process_mode" 
+                                               id="preview_mode" value="preview" checked>
+                                        <label class="form-check-label" for="preview_mode">
+                                            <strong>Preview Only</strong> - Validate and preview without saving
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="process_mode" 
+                                               id="save_mode" value="save">
+                                        <label class="form-check-label" for="save_mode">
+                                            <strong>Save to Database</strong> - Import games permanently
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <div class="d-grid gap-2">
+                                    <button type="submit" class="btn btn-primary btn-lg">
+                                        <i class="bi bi-upload me-2"></i>Upload and Process
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-4">
+                    <div class="card">
+                        <div class="card-header bg-info text-white">
+                            <h6><i class="bi bi-info-circle me-2"></i>Upload Guidelines</h6>
+                        </div>
+                        <div class="card-body">
+                            <h6>Before Uploading:</h6>
+                            <ul class="small">
+                                <li>Download fresh template</li>
+                                <li>Fill using dropdown menus</li>
+                                <li>Remove sample/instruction rows</li>
+                                <li>Verify all dates are future dates</li>
+                                <li>Check for duplicate games</li>
+                            </ul>
+
+                            <h6>Processing Modes:</h6>
+                            <ul class="small">
+                                <li><strong>Preview:</strong> Validates file and shows what would be imported</li>
+                                <li><strong>Save:</strong> Actually imports games to database</li>
+                            </ul>
+
+                            <h6>Common Issues:</h6>
+                            <ul class="small">
+                                <li>League/location names must match exactly</li>
+                                <li>Official names must be from dropdown</li>
+                                <li>Date format: YYYY-MM-DD</li>
+                                <li>Time format: HH:MM (24-hour)</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="card mt-3">
+                        <div class="card-header bg-success text-white">
+                            <h6><i class="bi bi-download me-2"></i>Need Templates?</h6>
+                        </div>
+                        <div class="card-body">
+                            <p class="small">Don't have a template yet?</p>
+                            <div class="d-grid gap-2">
+                                <a href="{{ url_for('bulk.game_templates') }}" class="btn btn-success btn-sm">
+                                    <i class="bi bi-file-earmark-excel me-1"></i>Download Templates
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('uploadForm').addEventListener('submit', function(e) {
+    const fileInput = document.getElementById('file');
+    const file = fileInput.files[0];
+    
+    if (file) {
+        // Check file size (16MB = 16 * 1024 * 1024 bytes)
+        if (file.size > 16 * 1024 * 1024) {
+            e.preventDefault();
+            alert('File is too large. Maximum size is 16MB.');
+            return;
+        }
+        
+        // Show loading state
+        const submitBtn = e.target.querySelector('button[type="submit"]');
+        submitBtn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Processing...';
+        submitBtn.disabled = true;
+    }
+});
+</script>
+{% endblock %}

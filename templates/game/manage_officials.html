@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Officials - Sports Scheduler{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">Manage Officials</h4>
+                <p class="mb-0">Game: {{ game.id }} | Date: {{ game.game_date }}</p>
+            </div>
+            <div class="card-body">
+                <p><strong>League:</strong> {{ game.league.full_name if game.league else 'Unknown' }}</p>
+                <p><strong>Location:</strong> {{ game.location.name if game.location else 'TBD' }}</p>
+                <p><strong>Current Official Slots:</strong> 
+                   {% if game.assignments %}{{ game.assignments|length }}{% else %}0{% endif %}
+                </p>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Official Assignments</h5>
+                <button type="button" class="btn btn-success btn-sm" onclick="addOfficialSlot()">
+                    <i class="fas fa-plus"></i> Add Slot
+                </button>
+            </div>
+            
+            <div class="card-body">
+                {% if game.assignments %}
+                    {% for assignment in game.assignments %}
+                    <div class="assignment-row mb-3 p-3 border rounded">
+                        <div class="row align-items-center">
+                            <div class="col-md-4">
+                                <strong>{{ assignment.position or 'Official' }}</strong>
+                                <br>
+                                <span class="badge bg-secondary">{{ assignment.status or 'unassigned' }}</span>
+                            </div>
+                            <div class="col-md-4">
+                                {% if assignment.official %}
+                                    {{ assignment.official.full_name }}
+                                {% else %}
+                                    <em class="text-muted">Unassigned</em>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-4 text-end">
+                                {% if assignment.status == 'unassigned' or not assignment.status %}
+                                <button type="button" class="btn btn-outline-danger btn-sm" 
+                                        onclick="removeOfficialSlot({{ assignment.id }})">
+                                    <i class="fas fa-trash"></i> Remove
+                                </button>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="text-center py-4">
+                        <p class="text-muted">No official slots created yet.</p>
+                        <button type="button" class="btn btn-primary" onclick="addOfficialSlot()">
+                            <i class="fas fa-plus"></i> Create First Official Slot
+                        </button>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function addOfficialSlot() {
+    const positionName = prompt('Enter position name (or leave blank for default):');
+    
+    fetch('/games/{{ game.id }}/add-official-slot', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({position_name: positionName})
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Official slot added successfully!');
+            location.reload();
+        } else {
+            alert('Error: ' + data.message);
+        }
+    })
+    .catch(error => {
+        alert('Error adding slot: ' + error);
+    });
+}
+
+function removeOfficialSlot(assignmentId) {
+    if (confirm('Are you sure you want to remove this official slot?')) {
+        fetch('/games/{{ game.id }}/remove-official-slot', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({assignment_id: assignmentId})
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Official slot removed successfully!');
+                location.reload();
+            } else {
+                alert('Error: ' + data.message);
+            }
+        })
+        .catch(error => {
+            alert('Error removing slot: ' + error);
+        });
+    }
+}
+</script>
+{% endblock %}

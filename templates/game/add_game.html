@@ -1,0 +1,264 @@
+{% extends "base.html" %}
+
+{% block title %}Add Game - Sports Scheduler{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1><i class="bi bi-plus-lg me-2"></i>Add New Game</h1>
+            <a href="{{ url_for('game.manage_games') }}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-1"></i>Back to Games
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-10">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="bi bi-calendar-event me-2"></i>Game Information</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" id="gameForm">
+                    <div class="row">
+                        <!-- League Selection -->
+                        <div class="col-md-6 mb-3">
+                            <label for="league_id" class="form-label">League *</label>
+                            <select class="form-select" id="league_id" name="league_id" required>
+                                <option value="">Select League</option>
+                                {% for league in leagues %}
+                                <option value="{{ league.id }}" data-fee="{{ league.game_fee }}">
+                                    {{ league.full_name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <!-- Location Selection -->
+                        <div class="col-md-6 mb-3">
+                            <label for="location_id" class="form-label">Location *</label>
+                            <select class="form-select" id="location_id" name="location_id" required>
+                                <option value="">Select Location</option>
+                                {% for location in locations %}
+                                <option value="{{ location.id }}" data-fields="{{ location.field_count }}">
+                                    {{ location.name }} - {{ location.city }}, {{ location.state }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <!-- Date and Time -->
+                        <div class="col-md-4 mb-3">
+                            <label for="date" class="form-label">Date *</label>
+                            <input type="date" class="form-control" id="date" name="date" required>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="time" class="form-label">Time *</label>
+                            <input type="time" class="form-control" id="time" name="time" required>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="field_name" class="form-label">Field/Court</label>
+                            <select class="form-select" id="field_name" name="field_name">
+                                <option value="">Select Field</option>
+                            </select>
+                            <div class="form-text">Available after selecting location</div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <!-- Team Information -->
+                        <div class="col-md-6 mb-3">
+                            <label for="home_team" class="form-label">Home Team</label>
+                            <input type="text" class="form-control" id="home_team" name="home_team" 
+                                   placeholder="e.g., Cy-Ranch Mustangs">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="away_team" class="form-label">Away Team</label>
+                            <input type="text" class="form-control" id="away_team" name="away_team" 
+                                   placeholder="e.g., Klein Oak Panthers">
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <!-- Game Level and Duration -->
+                        <div class="col-md-4 mb-3">
+                            <label for="level" class="form-label">Game Level</label>
+                            <select class="form-select" id="level" name="level">
+                                <option value="">Use League Default</option>
+                                <option value="Elementary">Elementary</option>
+                                <option value="Middle School">Middle School</option>
+                                <option value="JV">JV</option>
+                                <option value="Varsity">Varsity</option>
+                                <option value="High School">High School</option>
+                                <option value="College">College</option>
+                                <option value="Adult Rec">Adult Rec</option>
+                                <option value="Youth">Youth</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="estimated_duration" class="form-label">Duration (minutes)</label>
+                            <input type="number" class="form-control" id="estimated_duration" name="estimated_duration" 
+                                   value="120" min="30" max="300">
+                            <div class="form-text">Estimated game duration</div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="fee_per_official" class="form-label">Fee per Official</label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="number" class="form-control" id="fee_per_official" name="fee_per_official" 
+                                       step="0.01" min="0" placeholder="0.00">
+                            </div>
+                            <div class="form-text">Leave blank to use league default</div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <!-- Notes -->
+                        <div class="col-md-6 mb-3">
+                            <label for="notes" class="form-label">Game Notes</label>
+                            <textarea class="form-control" id="notes" name="notes" rows="3"
+                                      placeholder="General notes about this game..."></textarea>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="special_instructions" class="form-label">Special Instructions</label>
+                            <textarea class="form-control" id="special_instructions" name="special_instructions" rows="3"
+                                      placeholder="Special instructions for officials..."></textarea>
+                        </div>
+                    </div>
+                    
+                    <!-- Conflict Warning Area -->
+                    <div id="conflictWarnings" class="alert alert-warning d-none">
+                        <h6><i class="bi bi-exclamation-triangle me-2"></i>Potential Conflicts</h6>
+                        <div id="conflictList"></div>
+                    </div>
+                    
+                    <!-- ADD THE RANKING SECTION HERE -->
+                    <div class="card mt-3">
+                        <div class="card-header">
+                            <h6><i class="fas fa-star"></i> Game Importance (Optional)</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <label for="game_ranking" class="form-label">Game Ranking</label>
+                                    <select class="form-select" id="game_ranking" name="game_ranking">
+                                        <option value="">Select ranking (optional)</option>
+                                        <option value="1">1 - Basic/Training Game</option>
+                                        <option value="2">2 - Regular Season - Low Priority</option>
+                                        <option value="3" selected>3 - Regular Season - Standard</option>
+                                        <option value="4">4 - Important Game/Playoff</option>
+                                        <option value="5">5 - Championship/High Priority</option>
+                                    </select>
+                                    <small class="form-text text-muted">Higher rankings get better officials</small>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="ranking_notes" class="form-label">Ranking Notes</label>
+                                    <textarea class="form-control" id="ranking_notes" name="ranking_notes" rows="2" 
+                                              placeholder="Why this ranking? (optional)"></textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                                        
+                    <div class="d-flex justify-content-end gap-2">
+                        <a href="{{ url_for('game.manage_games') }}" class="btn btn-outline-secondary">Cancel</a>
+                        <button type="submit" name="status" value="draft" class="btn btn-secondary">
+                            <i class="bi bi-file-earmark me-1"></i>Save as Draft
+                        </button>
+                        <button type="submit" name="status" value="ready" class="btn btn-primary">
+                            <i class="bi bi-check-lg me-1"></i>Save as Ready
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const leagueSelect = document.getElementById('league_id');
+    const locationSelect = document.getElementById('location_id');
+    const fieldSelect = document.getElementById('field_name');
+    const feeInput = document.getElementById('fee_per_official');
+    const dateInput = document.getElementById('date');
+    const timeInput = document.getElementById('time');
+    
+    // Set minimum date to today
+    const today = new Date().toISOString().split('T')[0];
+    dateInput.min = today;
+    
+    // League selection handler
+    leagueSelect.addEventListener('change', function() {
+        const selectedOption = this.options[this.selectedIndex];
+        if (selectedOption.value) {
+            const fee = selectedOption.dataset.fee;
+            feeInput.placeholder = `$${fee} (league default)`;
+        } else {
+            feeInput.placeholder = '0.00';
+        }
+    });
+    
+    // Location selection handler
+    locationSelect.addEventListener('change', function() {
+        const locationId = this.value;
+        fieldSelect.innerHTML = '<option value="">Select Field</option>';
+        
+        if (locationId) {
+            // Fetch field information
+            fetch(`/game/api/location/${locationId}/fields`)
+                .then(response => response.json())
+                .then(data => {
+                    data.fields.forEach(field => {
+                        const option = document.createElement('option');
+                        option.value = field;
+                        option.textContent = field;
+                        fieldSelect.appendChild(option);
+                    });
+                })
+                .catch(error => {
+                    console.error('Error fetching fields:', error);
+                });
+        }
+    });
+    
+    // Conflict checking (simplified for demo)
+    function checkConflicts() {
+        const date = dateInput.value;
+        const time = timeInput.value;
+        const location = locationSelect.value;
+        const field = fieldSelect.value;
+        
+        if (date && time && location) {
+            // In a real implementation, this would make an AJAX call to check conflicts
+            // For now, just show a placeholder
+            console.log('Checking conflicts for:', date, time, location, field);
+        }
+    }
+    
+    // Add conflict checking to form inputs
+    [dateInput, timeInput, locationSelect, fieldSelect].forEach(input => {
+        input.addEventListener('change', checkConflicts);
+    });
+    
+    // Form submission handler
+    document.getElementById('gameForm').addEventListener('submit', function(e) {
+        // Add any final validation here
+        const league = leagueSelect.value;
+        const location = locationSelect.value;
+        const date = dateInput.value;
+        const time = timeInput.value;
+        
+        if (!league || !location || !date || !time) {
+            e.preventDefault();
+            alert('Please fill in all required fields (League, Location, Date, and Time).');
+            return false;
+        }
+    });
+});
+</script>
+{% endblock %}

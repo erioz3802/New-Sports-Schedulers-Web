@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} - Sports Scheduler{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h1 class="h3 mb-0">{{ title }}</h1>
+                <p class="text-muted">Manage your game assignments</p>
+            </div>
+            <div>
+                <button class="btn btn-outline-primary" onclick="refreshAssignments()">
+                    <i class="bi bi-arrow-clockwise me-2"></i>Refresh
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-light">
+                <h5 class="mb-0"><i class="bi bi-list-ul me-2"></i>Your Assignments</h5>
+            </div>
+            <div class="card-body">
+                {% if assignments %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Time</th>
+                                <th>Game</th>
+                                <th>Location</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for assignment in assignments %}
+                            <tr>
+                                <td>{{ assignment.game.date.strftime('%m/%d/%Y') if assignment.game else 'TBD' }}</td>
+                                <td>
+                                    {% if assignment.game and assignment.game.time %}
+                                        {{ assignment.game.time.strftime('%I:%M %p') }}
+                                    {% else %}
+                                        TBD
+                                    {% endif %}
+                                </td>
+                                <td>{{ assignment.game.game_title if assignment.game and assignment.game.game_title else 'Game Assignment' }}</td>
+                                <td>{{ assignment.game.location.name if assignment.game and assignment.game.location else 'TBD' }}</td>
+                                <td>
+                                    <span class="badge bg-{{ 'success' if assignment.status == 'accepted' else 'warning' if assignment.status == 'assigned' else 'danger' if assignment.status == 'declined' else 'secondary' }}">
+                                        {{ assignment.status.title() }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <!-- WORKING LINK -->
+                                    <a href="#" onclick="alert('Assignment details: Game {{ assignment.game_id }}, Status: {{ assignment.status }}')">View</a> 
+                                       class="btn btn-sm btn-outline-primary">View</a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="bi bi-calendar-x display-4 text-muted mb-3"></i>
+                    <h5 class="text-muted">No Assignments</h5>
+                    <p class="text-muted">You don't have any assignments yet.</p>
+                    <a href="{{ url_for('index') }}" class="btn btn-primary">Back to Dashboard</a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function refreshAssignments() {
+    fetch('/official/api/assignments')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Assignments refreshed successfully!');
+                window.location.reload();
+            }
+        })
+        .catch(error => {
+            alert('Refreshed - please reload page to see updates');
+        });
+}
+</script>
+{% endblock %}

@@ -1,0 +1,207 @@
+{% extends "base.html" %}
+
+{% block title %}Add League - Sports Scheduler{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8 mx-auto">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">
+                    <i class="fas fa-trophy me-2"></i>
+                    Add New League
+                </h4>
+            </div>
+            
+            <div class="card-body">
+                <form method="POST">
+                    <div class="row">
+                        <!-- Left Column: Basic Information -->
+                        <div class="col-md-6">
+                            <h5 class="mb-3 text-primary">
+                                <i class="fas fa-info-circle me-2"></i>
+                                League Information
+                            </h5>
+                            
+                            <div class="mb-3">
+                                <label for="name" class="form-label">League Name *</label>
+                                <input type="text" class="form-control" id="name" name="name" required 
+                                       placeholder="e.g., Basketball, Soccer, Baseball"
+                                       value="{{ request.form.name if request.form.name else '' }}">
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="level" class="form-label">Level *</label>
+                                <input type="text" class="form-control" id="level" name="level" required 
+                                       placeholder="e.g., High School, College, 11U, Varsity"
+                                       value="{{ request.form.level if request.form.level else '' }}">
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="description" class="form-label">Description</label>
+                                <textarea class="form-control" id="description" name="description" rows="3"
+                                          placeholder="Optional description of this league">{{ request.form.description if request.form.description else '' }}</textarea>
+                            </div>
+                        </div>
+                        
+                        <!-- Right Column: Officials & Financial Settings -->
+                        <div class="col-md-6">
+                            <h5 class="mb-3 text-success">
+                                <i class="fas fa-users me-2"></i>
+                                Officials & Financial Settings
+                            </h5>
+                            
+                            <!-- NEW: Default Officials Count -->
+                            <div class="mb-3">
+                                <label for="default_officials_count" class="form-label">
+                                    Default Number of Officials *
+                                    <i class="fas fa-info-circle text-info ms-1" 
+                                       data-bs-toggle="tooltip" 
+                                       title="Number of official slots created for each game in this league"></i>
+                                </label>
+                                <div class="input-group">
+                                    <button type="button" class="btn btn-outline-secondary" onclick="adjustOfficials(-1)">
+                                        <i class="fas fa-minus"></i>
+                                    </button>
+                                    <input type="number" class="form-control text-center" id="default_officials_count" 
+                                           name="default_officials_count" min="1" max="6" required
+                                           value="{{ request.form.default_officials_count if request.form.default_officials_count else '2' }}">
+                                    <button type="button" class="btn btn-outline-secondary" onclick="adjustOfficials(1)">
+                                        <i class="fas fa-plus"></i>
+                                    </button>
+                                </div>
+                                <div class="form-text">Most games use 2-3 officials</div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="game_fee" class="form-label">Game Fee per Official (Optional)</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    <input type="number" class="form-control" id="game_fee" 
+                                           name="game_fee" step="0.01" min="0" placeholder="0.00"
+                                           value="{{ request.form.game_fee if request.form.game_fee else '' }}">
+                                </div>
+                                <div class="form-text">Amount paid to each official per game. Leave blank for $0.00</div>
+                            </div>
+                            
+                            <!-- NEW: Default Scheduling Fee -->
+                            <div class="mb-3">
+                                <label for="default_scheduling_fee" class="form-label">
+                                    Default Scheduling Fee
+                                    <i class="fas fa-info-circle text-info ms-1" 
+                                       data-bs-toggle="tooltip" 
+                                       title="Optional fee paid to officials for accepting assignments"></i>
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    <input type="number" class="form-control" id="default_scheduling_fee" 
+                                           name="default_scheduling_fee" step="0.01" min="0"
+                                           value="{{ request.form.default_scheduling_fee if request.form.default_scheduling_fee else '0.00' }}">
+                                </div>
+                                <div class="form-text">Optional fee for accepting assignments (can be $0.00)</div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="billing_recipient" class="form-label">Billing Recipient</label>
+                                <input type="text" class="form-control" id="billing_recipient" 
+                                       name="billing_recipient" placeholder="Who receives the bill"
+                                       value="{{ request.form.billing_recipient if request.form.billing_recipient else '' }}">
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="billing_amount" class="form-label">Billing Amount</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    <input type="number" class="form-control" id="billing_amount" 
+                                           name="billing_amount" step="0.01" min="0"
+                                           value="{{ request.form.billing_amount if request.form.billing_amount else '0.00' }}">
+                                </div>
+                            </div>
+                            
+                            <!-- Cost Preview -->
+                            <div class="alert alert-info">
+                                <h6 class="mb-2">
+                                    <i class="fas fa-calculator me-2"></i>
+                                    Cost Per Game Preview
+                                </h6>
+                                <div class="row">
+                                    <div class="col-sm-6">
+                                        <strong>Per Official:</strong><br>
+                                        <span id="cost-per-official">$0.00</span>
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <strong>Total Game Cost:</strong><br>
+                                        <span id="total-game-cost">$0.00</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Form Actions -->
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <hr>
+                            <div class="d-flex justify-content-between">
+                                <a href="{{ url_for('league.manage_leagues') }}" class="btn btn-secondary">
+                                    <i class="fas fa-arrow-left me-2"></i>
+                                    Cancel
+                                </a>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save me-2"></i>
+                                    Create League
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// Enable tooltips
+document.addEventListener('DOMContentLoaded', function() {
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+    
+    // Initialize cost preview
+    updateCostPreview();
+});
+
+// Officials count adjustment
+function adjustOfficials(change) {
+    const input = document.getElementById('default_officials_count');
+    let currentValue = parseInt(input.value) || 2;
+    let newValue = currentValue + change;
+    
+    if (newValue >= 1 && newValue <= 6) {
+        input.value = newValue;
+        updateCostPreview();
+    }
+}
+
+// Real-time cost calculation
+function updateCostPreview() {
+    const officialsCount = parseInt(document.getElementById('default_officials_count').value) || 0;
+    const gameFee = parseFloat(document.getElementById('game_fee').value) || 0;
+    const schedulingFee = parseFloat(document.getElementById('default_scheduling_fee').value) || 0;
+    
+    const costPerOfficial = gameFee + schedulingFee;
+    const totalGameCost = costPerOfficial * officialsCount;
+    
+    document.getElementById('cost-per-official').textContent = '$' + costPerOfficial.toFixed(2);
+    document.getElementById('total-game-cost').textContent = '$' + totalGameCost.toFixed(2);
+}
+
+// Update cost preview on input changes
+document.getElementById('default_officials_count').addEventListener('input', updateCostPreview);
+document.getElementById('game_fee').addEventListener('input', updateCostPreview);
+document.getElementById('default_scheduling_fee').addEventListener('input', updateCostPreview);
+</script>
+{% endblock %}

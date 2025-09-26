@@ -1,0 +1,479 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h1 class="h3 mb-0">
+            <i class="bi bi-calendar-x me-2 text-success"></i>
+            My Availability
+        </h1>
+        <p class="text-muted mt-1">Set your availability to prevent assignment conflicts</p>
+    </div>
+    <div class="col-md-4 text-end">
+        <button onclick="saveAvailability()" class="btn btn-success me-2">
+            <i class="bi bi-check-lg me-1"></i>Save Changes
+        </button>
+        <a href="/official/dashboard" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i>Back to Dashboard
+        </a>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="row mb-4">
+    <div class="col">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <h6 class="mb-3"><i class="bi bi-lightning me-2"></i>Quick Actions</h6>
+                <div class="row">
+                    <div class="col-md-3 mb-2">
+                        <button type="button" class="btn btn-outline-danger btn-sm w-100" onclick="blockToday()">
+                            <i class="bi bi-x-circle me-1"></i>Block Today
+                        </button>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <button type="button" class="btn btn-outline-warning btn-sm w-100" onclick="blockWeekend()">
+                            <i class="bi bi-calendar-x me-1"></i>Block Weekend
+                        </button>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <button type="button" class="btn btn-outline-info btn-sm w-100" onclick="clearAll()">
+                            <i class="bi bi-arrow-clockwise me-1"></i>Clear All
+                        </button>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <button type="button" class="btn btn-outline-secondary btn-sm w-100" onclick="viewAssignments()">
+                            <i class="bi bi-eye me-1"></i>View Assignments
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Main Calendar -->
+<div class="row">
+    <div class="col-md-8">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="bi bi-calendar3 me-2"></i>Availability Calendar</h5>
+                <div class="btn-group btn-group-sm" role="group">
+                    <button type="button" class="btn btn-outline-secondary" onclick="previousMonth()">
+                        <i class="bi bi-chevron-left"></i>
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary" id="currentMonth">
+                        Loading...
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary" onclick="nextMonth()">
+                        <i class="bi bi-chevron-right"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="card-body p-0">
+                <div id="calendar-container">
+                    <table class="table table-bordered mb-0" id="calendar">
+                        <thead class="table-light">
+                            <tr class="text-center">
+                                <th class="p-3">Sun</th>
+                                <th class="p-3">Mon</th>
+                                <th class="p-3">Tue</th>
+                                <th class="p-3">Wed</th>
+                                <th class="p-3">Thu</th>
+                                <th class="p-3">Fri</th>
+                                <th class="p-3">Sat</th>
+                            </tr>
+                        </thead>
+                        <tbody id="calendar-body">
+                            <!-- Calendar will be generated here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Sidebar -->
+    <div class="col-md-4">
+        <!-- Legend -->
+        <div class="card border-0 shadow-sm mb-3">
+            <div class="card-header bg-light">
+                <h6 class="mb-0"><i class="bi bi-info-circle me-2"></i>Legend</h6>
+            </div>
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-2">
+                    <div class="me-3 available-demo"></div>
+                    <small>Available (click to block)</small>
+                </div>
+                <div class="d-flex align-items-center mb-2">
+                    <div class="me-3 blocked-demo"></div>
+                    <small>Blocked (click to unblock)</small>
+                </div>
+                <div class="d-flex align-items-center mb-2">
+                    <div class="me-3 assignment-demo"></div>
+                    <small>Has Assignment</small>
+                </div>
+                <div class="d-flex align-items-center">
+                    <div class="me-3 past-demo"></div>
+                    <small>Past Date</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Instructions -->
+        <div class="card border-0 shadow-sm mb-3">
+            <div class="card-header bg-light">
+                <h6 class="mb-0"><i class="bi bi-question-circle me-2"></i>How It Works</h6>
+            </div>
+            <div class="card-body">
+                <ul class="list-unstyled mb-0 small">
+                    <li class="mb-2"><i class="bi bi-check2 text-success me-2"></i>Click dates to toggle availability</li>
+                    <li class="mb-2"><i class="bi bi-check2 text-success me-2"></i>Blocked dates won't receive assignments</li>
+                    <li class="mb-2"><i class="bi bi-check2 text-success me-2"></i>Use navigation arrows to change months</li>
+                    <li class="mb-2"><i class="bi bi-check2 text-success me-2"></i>Quick actions for common patterns</li>
+                    <li class="mb-0"><i class="bi bi-check2 text-success me-2"></i>Save changes when finished</li>
+                </ul>
+            </div>
+        </div>
+        
+        <!-- Blocked Dates -->
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-light">
+                <h6 class="mb-0"><i class="bi bi-calendar-x me-2"></i>Blocked Dates</h6>
+            </div>
+            <div class="card-body">
+                <div id="blockedDatesList">
+                    <p class="text-muted small mb-0">No blocked dates set</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Calendar Styling */
+#calendar {
+    width: 100%;
+}
+
+.calendar-cell {
+    width: 14.28%;
+    height: 60px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+    vertical-align: middle;
+    text-align: center;
+    font-weight: 500;
+}
+
+.calendar-cell:hover {
+    transform: scale(1.05);
+    z-index: 1;
+}
+
+.calendar-cell.available {
+    background-color: #d4edda;
+    border-color: #c3e6cb;
+    color: #155724;
+}
+
+.calendar-cell.available:hover {
+    background-color: #c3e6cb;
+}
+
+.calendar-cell.blocked {
+    background-color: #f8d7da;
+    border-color: #f5c6cb;
+    color: #721c24;
+}
+
+.calendar-cell.blocked:hover {
+    background-color: #f1b0b7;
+}
+
+.calendar-cell.has-assignment {
+    background-color: #fff3cd;
+    border-color: #ffeaa7;
+    color: #856404;
+    cursor: not-allowed;
+}
+
+.calendar-cell.has-assignment:hover {
+    transform: none;
+    background-color: #fff3cd;
+}
+
+.calendar-cell.past {
+    background-color: #f8f9fa;
+    color: #6c757d;
+    cursor: not-allowed;
+}
+
+.calendar-cell.past:hover {
+    transform: none;
+}
+
+.calendar-cell.today {
+    border: 2px solid #007bff !important;
+    font-weight: bold;
+}
+
+/* Legend demos */
+.available-demo, .blocked-demo, .assignment-demo, .past-demo {
+    width: 20px;
+    height: 20px;
+    border-radius: 3px;
+    border: 1px solid #dee2e6;
+}
+
+.available-demo { background-color: #d4edda; }
+.blocked-demo { background-color: #f8d7da; }
+.assignment-demo { background-color: #fff3cd; }
+.past-demo { background-color: #f8f9fa; }
+</style>
+
+<script>
+// Calendar functionality
+let currentDate = new Date();
+let blockedDates = new Set();
+let assignments = new Map(); // Date string -> assignment info
+
+// Sample assignment data - in real app this would come from server
+assignments.set('2025-10-11', { game: 'Game Assignment', status: 'accepted' });
+
+function generateCalendar() {
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
+    
+    // Update month display
+    const monthNames = ["January", "February", "March", "April", "May", "June",
+        "July", "August", "September", "October", "November", "December"];
+    document.getElementById('currentMonth').textContent = `${monthNames[month]} ${year}`;
+    
+    // Get first day of month and number of days
+    const firstDay = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const today = new Date();
+    
+    // Clear calendar
+    const calendarBody = document.getElementById('calendar-body');
+    calendarBody.innerHTML = '';
+    
+    let date = 1;
+    
+    // Generate calendar rows
+    for (let i = 0; i < 6; i++) {
+        const row = document.createElement('tr');
+        
+        for (let j = 0; j < 7; j++) {
+            const cell = document.createElement('td');
+            cell.className = 'calendar-cell';
+            
+            if (i === 0 && j < firstDay) {
+                // Empty cell before month starts
+                cell.innerHTML = '';
+                cell.className = '';
+            } else if (date > daysInMonth) {
+                // Empty cell after month ends
+                cell.innerHTML = '';
+                cell.className = '';
+            } else {
+                // Regular date cell
+                const cellDate = new Date(year, month, date);
+                const dateStr = formatDateKey(cellDate);
+                
+                cell.innerHTML = date;
+                cell.setAttribute('data-date', dateStr);
+                
+                // Determine cell type
+                if (cellDate < today.setHours(0,0,0,0)) {
+                    cell.classList.add('past');
+                } else if (assignments.has(dateStr)) {
+                    cell.classList.add('has-assignment');
+                    cell.title = `Assignment: ${assignments.get(dateStr).game}`;
+                } else if (blockedDates.has(dateStr)) {
+                    cell.classList.add('blocked');
+                    cell.onclick = () => toggleDate(dateStr);
+                } else {
+                    cell.classList.add('available');
+                    cell.onclick = () => toggleDate(dateStr);
+                }
+                
+                // Highlight today
+                if (cellDate.toDateString() === today.toDateString()) {
+                    cell.classList.add('today');
+                }
+                
+                date++;
+            }
+            
+            row.appendChild(cell);
+        }
+        
+        calendarBody.appendChild(row);
+        
+        if (date > daysInMonth) break;
+    }
+    
+    updateBlockedDatesList();
+}
+
+function formatDateKey(date) {
+    return date.getFullYear() + '-' + 
+           String(date.getMonth() + 1).padStart(2, '0') + '-' + 
+           String(date.getDate()).padStart(2, '0');
+}
+
+function toggleDate(dateStr) {
+    const cell = document.querySelector(`[data-date="${dateStr}"]`);
+    
+    if (cell.classList.contains('has-assignment') || cell.classList.contains('past')) {
+        return;
+    }
+    
+    if (blockedDates.has(dateStr)) {
+        // Unblock date
+        blockedDates.delete(dateStr);
+        cell.classList.remove('blocked');
+        cell.classList.add('available');
+        showNotification('Date unblocked', 'info');
+    } else {
+        // Block date
+        blockedDates.add(dateStr);
+        cell.classList.remove('available');
+        cell.classList.add('blocked');
+        showNotification('Date blocked', 'warning');
+    }
+    
+    updateBlockedDatesList();
+}
+
+function previousMonth() {
+    currentDate.setMonth(currentDate.getMonth() - 1);
+    generateCalendar();
+}
+
+function nextMonth() {
+    currentDate.setMonth(currentDate.getMonth() + 1);
+    generateCalendar();
+}
+
+function blockToday() {
+    const today = new Date();
+    const todayStr = formatDateKey(today);
+    
+    if (assignments.has(todayStr)) {
+        showNotification('Cannot block dates with assignments', 'error');
+        return;
+    }
+    
+    blockedDates.add(todayStr);
+    generateCalendar();
+    showNotification('Today blocked', 'success');
+}
+
+function blockWeekend() {
+    const today = new Date();
+    const saturday = new Date(today);
+    const sunday = new Date(today);
+    
+    // Find next Saturday and Sunday
+    const daysUntilSaturday = (6 - today.getDay() + 7) % 7;
+    if (daysUntilSaturday === 0 && today.getDay() === 6) {
+        // Today is Saturday
+        saturday.setDate(today.getDate());
+        sunday.setDate(today.getDate() + 1);
+    } else {
+        saturday.setDate(today.getDate() + daysUntilSaturday);
+        sunday.setDate(today.getDate() + daysUntilSaturday + 1);
+    }
+    
+    const satStr = formatDateKey(saturday);
+    const sunStr = formatDateKey(sunday);
+    
+    let blocked = 0;
+    if (!assignments.has(satStr)) {
+        blockedDates.add(satStr);
+        blocked++;
+    }
+    if (!assignments.has(sunStr)) {
+        blockedDates.add(sunStr);
+        blocked++;
+    }
+    
+    generateCalendar();
+    showNotification(`Weekend blocked (${blocked} dates)`, 'success');
+}
+
+function clearAll() {
+    if (confirm('Clear all blocked dates? This cannot be undone.')) {
+        blockedDates.clear();
+        generateCalendar();
+        showNotification('All blocked dates cleared', 'info');
+    }
+}
+
+function saveAvailability() {
+    const blockedArray = Array.from(blockedDates);
+    
+    // In a real app, send to server:
+    // fetch('/official/save-availability', {
+    //     method: 'POST',
+    //     headers: { 'Content-Type': 'application/json' },
+    //     body: JSON.stringify({ blocked_dates: blockedArray })
+    // });
+    
+    showNotification(`Availability saved! (${blockedArray.length} blocked dates)`, 'success');
+}
+
+function viewAssignments() {
+    window.location.href = '/official/assignments';
+}
+
+function updateBlockedDatesList() {
+    const listDiv = document.getElementById('blockedDatesList');
+    const blockedArray = Array.from(blockedDates).sort();
+    
+    if (blockedArray.length === 0) {
+        listDiv.innerHTML = '<p class="text-muted small mb-0">No blocked dates set</p>';
+    } else {
+        const html = blockedArray.map(dateStr => {
+            const date = new Date(dateStr);
+            const formatted = date.toLocaleDateString('en-US', { 
+                month: 'short', 
+                day: 'numeric'
+            });
+            return `<span class="badge bg-danger me-1 mb-1">${formatted}</span>`;
+        }).join('');
+        listDiv.innerHTML = html;
+    }
+}
+
+function showNotification(message, type) {
+    const alertClass = type === 'error' ? 'danger' : type;
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${alertClass} alert-dismissible fade show position-fixed`;
+    alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 1050; min-width: 300px;';
+    alertDiv.innerHTML = `
+        <i class="bi bi-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-triangle' : 'info-circle'} me-2"></i>
+        ${message}
+        <button type="button" class="btn-close" onclick="this.parentElement.remove()"></button>
+    `;
+    document.body.appendChild(alertDiv);
+    
+    // Auto-remove after 3 seconds
+    setTimeout(() => {
+        if (alertDiv.parentElement) {
+            alertDiv.remove();
+        }
+    }, 3000);
+}
+
+// Initialize calendar on page load
+document.addEventListener('DOMContentLoaded', function() {
+    generateCalendar();
+});
+</script>
+
+{% endblock %}

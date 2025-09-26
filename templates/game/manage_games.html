@@ -1,0 +1,1269 @@
+<!-- templates/game/manage_games.html - ENHANCED VERSION WITH BUG FIXES AND IMPROVEMENTS -->
+{% extends "base.html" %}
+
+{% block title %}Manage Games - Sports Scheduler{% endblock %}
+
+{% block head %}
+<!-- CSRF Token for Security -->
+<meta name="csrf-token" content="{{ csrf_token() if csrf_token else '' }}">
+
+<style>
+/* Enhanced Game Row Styling with Better Visual Hierarchy */
+.game-row {
+    transition: all 0.2s ease-in-out;
+}
+
+.game-row:hover {
+    background-color: rgba(0, 123, 255, 0.05);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.game-row.past-game {
+    background-color: rgba(108, 117, 125, 0.08);
+    opacity: 0.85;
+}
+
+.game-row.today-game {
+    background-color: rgba(255, 243, 205, 0.4);
+    border-left: 4px solid #ffc107;
+}
+
+.game-row.future-game {
+    background-color: rgba(209, 236, 241, 0.2);
+}
+
+.game-row.cancelled-game {
+    background-color: rgba(220, 53, 69, 0.1);
+    opacity: 0.7;
+}
+
+.game-row.cancelled-game td {
+    text-decoration: line-through;
+}
+
+/* Time Period Navigation Enhancement */
+.time-period-tabs {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 0.375rem;
+    padding: 0.25rem;
+}
+
+.time-period-tabs .nav-link {
+    color: #495057;
+    font-weight: 500;
+    border: none;
+    border-radius: 0.25rem;
+    margin: 0.125rem;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.time-period-tabs .nav-link:hover {
+    background-color: #fff;
+    color: #007bff;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.time-period-tabs .nav-link.active {
+    background-color: #007bff;
+    color: white;
+    box-shadow: 0 3px 6px rgba(0,123,255,0.3);
+}
+
+/* Enhanced Filter Card */
+.filter-card {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border: 1px solid #dee2e6;
+    box-shadow: 0 3px 6px rgba(0,0,0,0.08);
+}
+
+/* Bulk Selection Enhancements */
+.bulk-actions {
+    display: none;
+    opacity: 0;
+    transform: translateY(-10px);
+    transition: all 0.3s ease;
+}
+
+.bulk-actions.show {
+    display: flex;
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.bulk-select-header,
+.bulk-select-cell {
+    width: 50px;
+    text-align: center;
+    vertical-align: middle;
+}
+
+/* Enhanced Status Badges */
+.status-badge {
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.4rem 0.7rem;
+    border-radius: 0.375rem;
+    text-transform: uppercase;
+    letter-spacing: 0.025em;
+}
+
+/* Button Group Improvements */
+.btn-group-enhanced .btn {
+    border-radius: 0.375rem;
+    margin-right: 0.125rem;
+    transition: all 0.2s ease;
+}
+
+.btn-group-enhanced .btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+/* Enhanced Dropdown Styling */
+.dropdown-menu-enhanced {
+    min-width: 240px;
+    border: none;
+    box-shadow: 0 8px 16px rgba(0,0,0,0.15);
+    border-radius: 0.5rem;
+    padding: 0.5rem 0;
+}
+
+.dropdown-item-enhanced {
+    display: flex;
+    align-items: center;
+    padding: 0.6rem 1rem;
+    border-radius: 0.25rem;
+    margin: 0.125rem 0.5rem;
+    transition: all 0.2s ease;
+}
+
+.dropdown-item-enhanced:hover {
+    background-color: rgba(0, 123, 255, 0.1);
+    transform: translateX(5px);
+}
+
+.dropdown-item-enhanced i {
+    width: 1.5rem;
+    margin-right: 0.75rem;
+    font-size: 1rem;
+}
+
+/* Loading and Error States */
+.loading-state {
+    opacity: 0.6;
+    pointer-events: none;
+    position: relative;
+}
+
+.loading-state::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(255,255,255,0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Error Alert Styling */
+.error-alert {
+    background-color: #f8d7da;
+    border: 1px solid #f5c6cb;
+    color: #721c24;
+    padding: 0.75rem 1rem;
+    border-radius: 0.375rem;
+    margin-bottom: 1rem;
+}
+
+/* Success Alert Styling */
+.success-alert {
+    background-color: #d1edff;
+    border: 1px solid #bee5eb;
+    color: #0c5460;
+    padding: 0.75rem 1rem;
+    border-radius: 0.375rem;
+    margin-bottom: 1rem;
+}
+
+/* Responsive Design Enhancements */
+@media (max-width: 768px) {
+    .time-period-tabs .nav-link {
+        font-size: 0.875rem;
+        padding: 0.5rem;
+    }
+    
+    .btn-group-enhanced .btn {
+        padding: 0.25rem 0.4rem;
+        font-size: 0.8rem;
+    }
+    
+    .table-responsive {
+        border: none;
+        box-shadow: none;
+    }
+    
+    .status-badge {
+        font-size: 0.7rem;
+        padding: 0.3rem 0.5rem;
+    }
+}
+
+/* Animation Classes */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.fade-in {
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
+.pulse-animation {
+    animation: pulse 0.3s ease-in-out;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Flash Messages Display -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="row mb-3">
+                <div class="col-12">
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ 'danger' if category == 'error' else 'success' if category == 'success' else 'info' }} alert-dismissible fade show" role="alert">
+                            <i class="bi bi-{{ 'exclamation-triangle' if category == 'error' else 'check-circle' if category == 'success' else 'info-circle' }} me-2"></i>
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <div class="row">
+        <div class="col-12">
+            <!-- Enhanced Page Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="mb-2">
+                        <i class="bi bi-calendar-event me-2 text-primary"></i>Manage Games
+                    </h1>
+                    <p class="text-muted mb-0 fs-6">
+                        Schedule, edit, and manage game assignments across all leagues
+                    </p>
+                </div>
+                <div class="d-flex gap-2 align-items-center">
+                    <!-- Quick Stats Display -->
+                    <div class="d-none d-lg-flex gap-3 me-3">
+                        <div class="text-center">
+                            <div class="fs-5 fw-bold text-primary">{{ games.total if games else 0 }}</div>
+                            <small class="text-muted">Total Games</small>
+                        </div>
+                        <div class="text-center">
+                            <div class="fs-5 fw-bold text-success">{{ released_count or 0 }}</div>
+                            <small class="text-muted">Released</small>
+                        </div>
+                    </div>
+                    
+                    <!-- Action Buttons -->
+                    <a href="{{ url_for('game.add_game') }}" class="btn btn-primary btn-lg">
+                        <i class="bi bi-plus-circle me-2"></i>Add Game
+                    </a>
+                    
+                    <!-- Enhanced Actions Dropdown -->
+                    <div class="dropdown">
+                        <button class="btn btn-outline-secondary btn-lg dropdown-toggle" type="button" 
+                                data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-gear me-1"></i>More Actions
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-enhanced dropdown-menu-end">
+                            <li><a class="dropdown-item-enhanced" href="{{ url_for('bulk.game_templates') }}">
+                                <i class="bi bi-upload text-success"></i>Bulk Import Games
+                            </a></li>
+                            <li><a class="dropdown-item-enhanced" href="#" onclick="exportGames()">
+                                <i class="bi bi-download text-info"></i>Export Games Data
+                            </a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item-enhanced" href="#" onclick="showQuickStats()">
+                                <i class="bi bi-bar-chart text-primary"></i>View Statistics
+                            </a></li>
+                            <li><a class="dropdown-item-enhanced" href="#" onclick="refreshData()">
+                                <i class="bi bi-arrow-clockwise text-secondary"></i>Refresh Data
+                            </a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Enhanced Time Period Tabs with Filters -->
+            <div class="card mb-4 filter-card fade-in">
+                <div class="card-header p-3">
+                    <ul class="nav nav-tabs card-header-tabs time-period-tabs mb-0" role="tablist">
+                        <li class="nav-item">
+                            <a class="nav-link {{ 'active' if (time_period or 'future') == 'future' else '' }}" 
+                               href="{{ url_for('game.manage_games', time_period='future', search=search, league=league_filter, status=status_filter) }}"
+                               data-period="future">
+                                <i class="bi bi-calendar-plus me-1"></i>Future Games
+                                <span class="badge bg-light text-dark ms-1">{{ future_count or '0' }}</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {{ 'active' if time_period == 'today' else '' }}" 
+                               href="{{ url_for('game.manage_games', time_period='today', search=search, league=league_filter, status=status_filter) }}"
+                               data-period="today">
+                                <i class="bi bi-calendar-check me-1"></i>Today
+                                <span class="badge bg-light text-dark ms-1">{{ today_count or '0' }}</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {{ 'active' if time_period == 'past' else '' }}" 
+                               href="{{ url_for('game.manage_games', time_period='past', search=search, league=league_filter, status=status_filter) }}"
+                               data-period="past">
+                                <i class="bi bi-calendar-x me-1"></i>Past Games
+                                <span class="badge bg-light text-dark ms-1">{{ past_count or '0' }}</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {{ 'active' if time_period == 'all' else '' }}" 
+                               href="{{ url_for('game.manage_games', time_period='all', search=search, league=league_filter, status=status_filter) }}"
+                               data-period="all">
+                                <i class="bi bi-calendar3 me-1"></i>All Games
+                                <span class="badge bg-light text-dark ms-1">{{ games.total if games else '0' }}</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+                
+                <!-- Enhanced Filter Form -->
+                <div class="card-body">
+                    <form method="GET" class="row g-3" id="filterForm">
+                        <input type="hidden" name="time_period" value="{{ time_period or 'future' }}">
+                        
+                        <!-- Search Input -->
+                        <div class="col-md-3">
+                            <label for="search" class="form-label fw-semibold">Search Games</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light">
+                                    <i class="bi bi-search text-muted"></i>
+                                </span>
+                                <input type="text" class="form-control" id="search" name="search" 
+                                       value="{{ search or '' }}" placeholder="Team, league, location..."
+                                       autocomplete="off">
+                            </div>
+                            <div class="form-text">Search by team names, league, or venue</div>
+                        </div>
+                        
+                        <!-- League Filter -->
+                        <div class="col-md-2">
+                            <label for="league" class="form-label fw-semibold">League</label>
+                            <select class="form-select" id="league" name="league">
+                                <option value="">All Leagues</option>
+                                {% if leagues %}
+                                    {% for league in leagues %}
+                                    <option value="{{ league.id }}" {{ 'selected' if league_filter == league.id|string else '' }}>
+                                        {{ league.name }}
+                                    </option>
+                                    {% endfor %}
+                                {% endif %}
+                            </select>
+                        </div>
+                        
+                        <!-- Status Filter -->
+                        <div class="col-md-2">
+                            <label for="status" class="form-label fw-semibold">Status</label>
+                            <select class="form-select" id="status" name="status">
+                                <option value="">All Status</option>
+                                <option value="draft" {{ 'selected' if status_filter == 'draft' else '' }}>Draft</option>
+                                <option value="ready" {{ 'selected' if status_filter == 'ready' else '' }}>Ready</option>
+                                <option value="released" {{ 'selected' if status_filter == 'released' else '' }}>Released</option>
+                                <option value="completed" {{ 'selected' if status_filter == 'completed' else '' }}>Completed</option>
+                                <option value="cancelled" {{ 'selected' if status_filter == 'cancelled' else '' }}>Cancelled</option>
+                            </select>
+                        </div>
+                        
+                        <!-- Date Filter -->
+                        <div class="col-md-2">
+                            <label for="date" class="form-label fw-semibold">Specific Date</label>
+                            <input type="date" class="form-control" id="date" name="date" 
+                                   value="{{ date_filter or '' }}" max="{{ max_date or '' }}">
+                        </div>
+                        
+                        <!-- Filter Actions -->
+                        <div class="col-md-3 d-flex align-items-end">
+                            <div class="btn-group w-100">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-funnel me-1"></i>Apply Filters
+                                </button>
+                                <a href="{{ url_for('game.manage_games', time_period=time_period or 'future') }}" 
+                                   class="btn btn-outline-secondary">
+                                    <i class="bi bi-x-circle me-1"></i>Clear
+                                </a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Enhanced Games Table -->
+            <div class="card shadow-sm fade-in">
+                <div class="card-header bg-light d-flex justify-content-between align-items-center py-3">
+                    <div>
+                        <h5 class="mb-0 d-flex align-items-center">
+                            <i class="bi bi-list me-2 text-primary"></i>
+                            {% if time_period == 'future' %}Future Games{% endif %}
+                            {% if time_period == 'today' %}Today's Games{% endif %}
+                            {% if time_period == 'past' %}Past Games{% endif %}
+                            {% if time_period == 'all' %}All Games{% endif %}
+                            <span class="badge bg-secondary ms-2">{{ games.total if games else 0 }}</span>
+                        </h5>
+                        <small class="text-muted">
+                            {% if games and games.total > 0 %}
+                                Showing {{ games.items|length }} of {{ games.total }} games
+                            {% endif %}
+                        </small>
+                    </div>
+                    
+                    <!-- Enhanced Bulk Actions -->
+                    <div class="bulk-actions align-items-center" id="bulkActions">
+                        <div class="btn-group btn-group-sm me-3">
+                            <span class="badge bg-info me-2 align-self-center" id="selectionCount">0 selected</span>
+                            <button type="button" class="btn btn-warning" onclick="performBulkAction('release')"
+                                    data-bs-toggle="tooltip" title="Release selected games to officials">
+                                <i class="bi bi-send me-1"></i>Release
+                            </button>
+                            <button type="button" class="btn btn-success" onclick="performBulkAction('link')"
+                                    data-bs-toggle="tooltip" title="Link games together">
+                                <i class="bi bi-link-45deg me-1"></i>Link
+                            </button>
+                            <button type="button" class="btn btn-outline-info" onclick="performBulkAction('clone')"
+                                    data-bs-toggle="tooltip" title="Clone selected games">
+                                <i class="bi bi-files me-1"></i>Clone
+                            </button>
+                            <button type="button" class="btn btn-danger" onclick="confirmBulkDelete()"
+                                    data-bs-toggle="tooltip" title="Delete selected games">
+                                <i class="bi bi-trash me-1"></i>Delete
+                            </button>
+                        </div>
+                        <button type="button" class="btn btn-secondary btn-sm" onclick="cancelBulkSelection()">
+                            <i class="bi bi-x me-1"></i>Cancel
+                        </button>
+                    </div>
+                    
+                    <!-- Table Control Buttons -->
+                    <div class="btn-group btn-group-sm">
+                        <button type="button" class="btn btn-outline-primary" onclick="toggleBulkSelection(true)"
+                                data-bs-toggle="tooltip" title="Enable bulk selection">
+                            <i class="bi bi-check2-square me-1"></i>Select Multiple
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary" onclick="refreshTable()"
+                                data-bs-toggle="tooltip" title="Refresh table data">
+                            <i class="bi bi-arrow-clockwise me-1"></i>Refresh
+                        </button>
+                    </div>
+                </div>
+                
+                {% if games and games.items %}
+                <div class="table-responsive">
+                    <!-- Bulk Action Form -->
+                    <form id="bulkActionForm" method="POST" action="">
+                        <!-- CSRF Token -->
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token else '' }}">
+                        
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="bulk-select-header" style="display: none;">
+                                        <div class="form-check">
+                                            <input type="checkbox" class="form-check-input" id="selectAll" 
+                                                   onchange="toggleSelectAll(this)" title="Select all games">
+                                            <label class="form-check-label visually-hidden" for="selectAll">Select All</label>
+                                        </div>
+                                    </th>
+                                    <th scope="col">Game Details</th>
+                                    <th scope="col">Date & Time</th>
+                                    <th scope="col">League</th>
+                                    <th scope="col">Location</th>
+                                    <th scope="col">Status</th>
+                                    <th scope="col">Officials</th>
+                                    <th scope="col" width="200">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for game in games.items %}
+                                    {% set current_date = moment().date() if moment else none %}
+                                    {% set is_past = game.date < current_date if current_date and game.date else false %}
+                                    {% set is_today = game.date == current_date if current_date and game.date else false %}
+                                    {% set is_cancelled = game.status == 'cancelled' %}
+                                    
+                                    <tr class="game-row 
+                                        {% if is_cancelled %}cancelled-game
+                                        {% elif is_past %}past-game
+                                        {% elif is_today %}today-game  
+                                        {% else %}future-game{% endif %}"
+                                        data-game-id="{{ game.id }}"
+                                        data-game-status="{{ game.status }}">
+                                        
+                                        <!-- Enhanced Bulk Selection -->
+                                        <td class="bulk-select-cell" style="display: none;">
+                                            <div class="form-check">
+                                                <input type="checkbox" class="form-check-input game-checkbox" 
+                                                       name="game_ids" value="{{ game.id }}" 
+                                                       onchange="updateSelectionCount()"
+                                                       title="Select {{ game.home_team or 'Game' }} vs {{ game.away_team or 'TBD' }}">
+                                                <label class="form-check-label visually-hidden">Select Game</label>
+                                            </div>
+                                        </td>
+                                        
+                                        <!-- Enhanced Game Details -->
+                                        <td>
+                                            <div class="d-flex flex-column">
+                                                <div class="fw-bold mb-1">
+                                                    {% if game.home_team and game.away_team %}
+                                                        {{ game.home_team }} vs {{ game.away_team }}
+                                                    {% elif game.game_title %}
+                                                        {{ game.game_title }}
+                                                    {% else %}
+                                                        <span class="text-muted">Game #{{ game.id }}</span>
+                                                    {% endif %}
+                                                </div>
+                                                
+                                                <!-- Game Level Badge -->
+                                                {% if game.level %}
+                                                <span class="badge bg-info mb-1">{{ game.level }}</span>
+                                                {% endif %}
+                                                
+                                                <!-- Game Fee Display -->
+                                                {% if game.fee_per_official %}
+                                                <small class="text-success fw-semibold">
+                                                    <i class="bi bi-currency-dollar"></i>${{ "%.2f"|format(game.fee_per_official) }} per official
+                                                </small>
+                                                {% endif %}
+                                                
+                                                <!-- Game Notes Preview -->
+                                                {% if game.notes %}
+                                                <small class="text-muted" title="{{ game.notes }}">
+                                                    <i class="bi bi-info-circle me-1"></i>
+                                                    {{ game.notes[:25] }}{% if game.notes|length > 25 %}...{% endif %}
+                                                </small>
+                                                {% endif %}
+                                                
+                                                <!-- Linked Games Indicator -->
+                                                {% if game.notes and 'Linked Group:' in game.notes %}
+                                                    {% set group_id = game.notes.split('Linked Group:')[1].split('\n')[0].strip() %}
+                                                    <span class="badge bg-secondary mt-1">
+                                                        <i class="bi bi-link-45deg"></i> Group {{ group_id }}
+                                                    </span>
+                                                {% endif %}
+                                            </div>
+                                        </td>
+                                        
+                                        <!-- Enhanced Date & Time -->
+                                        <td>
+                                            <div class="d-flex flex-column">
+                                                <div class="fw-bold">
+                                                    {{ game.date.strftime('%m/%d/%Y') if game.date else 'No Date Set' }}
+                                                </div>
+                                                <small class="text-muted">
+                                                    {{ game.time.strftime('%I:%M %p') if game.time else 'No Time Set' }}
+                                                </small>
+                                                
+                                                <!-- Duration Display -->
+                                                {% if game.estimated_duration and game.estimated_duration != 120 %}
+                                                <small class="text-info">
+                                                    <i class="bi bi-clock"></i> {{ game.estimated_duration }}min
+                                                </small>
+                                                {% endif %}
+                                                
+                                                <!-- Time Period Badge -->
+                                                {% if is_past %}
+                                                <span class="badge bg-secondary mt-1">Past</span>
+                                                {% elif is_today %}
+                                                <span class="badge bg-warning text-dark mt-1">Today</span>
+                                                {% endif %}
+                                            </div>
+                                        </td>
+                                        
+                                        <!-- Enhanced League Display -->
+                                        <td>
+                                            <div class="d-flex flex-column">
+                                                <div class="fw-bold">
+                                                    {{ game.league.name if game.league else 'No League Assigned' }}
+                                                </div>
+                                                {% if game.league and game.league.level %}
+                                                <small class="text-muted">{{ game.league.level }}</small>
+                                                {% endif %}
+                                            </div>
+                                        </td>
+                                        
+                                        <!-- Enhanced Location Display -->
+                                        <td>
+                                            <div class="d-flex flex-column">
+                                                <div class="fw-bold">
+                                                    {{ game.location.name if game.location else 'No Location Set' }}
+                                                </div>
+                                                {% if game.field_name %}
+                                                <small class="text-info">
+                                                    <i class="bi bi-geo"></i> {{ game.field_name }}
+                                                </small>
+                                                {% endif %}
+                                                {% if game.location and (game.location.city or game.location.state) %}
+                                                <small class="text-muted">
+                                                    {{ game.location.city }}{% if game.location.city and game.location.state %}, {% endif %}{{ game.location.state }}
+                                                </small>
+                                                {% endif %}
+                                            </div>
+                                        </td>
+                                        
+                                        <!-- Enhanced Status Display -->
+                                        <td>
+                                            <div class="d-flex flex-column align-items-start">
+                                                <span class="status-badge bg-{{ 
+                                                    'success' if game.status == 'completed' 
+                                                    else 'info' if game.status == 'released' 
+                                                    else 'warning text-dark' if game.status == 'ready' 
+                                                    else 'danger' if game.status == 'cancelled'
+                                                    else 'secondary' }}">
+                                                    {{ game.status.title() if game.status else 'Unknown' }}
+                                                </span>
+                                                
+                                                <!-- Release Date Display -->
+                                                {% if game.released_at and game.status == 'released' %}
+                                                <small class="text-muted mt-1">
+                                                    Released {{ game.released_at.strftime('%m/%d/%y') }}
+                                                </small>
+                                                {% endif %}
+                                                
+                                                <!-- Status History -->
+                                                {% if game.status_changed_at %}
+                                                <small class="text-muted mt-1">
+                                                    Updated {{ game.status_changed_at.strftime('%m/%d/%y') }}
+                                                </small>
+                                                {% endif %}
+                                            </div>
+                                        </td>
+                                        
+                                        <!-- Enhanced Officials Display -->
+                                        <td>
+                                            <div class="d-flex flex-column">
+                                                <div class="fw-bold">
+                                                    <i class="bi bi-people me-1"></i>{{ game.assigned_officials_count or 0 }} assigned
+                                                </div>
+                                                
+                                                <!-- Assignment Status Alerts -->
+                                                {% if (game.assigned_officials_count or 0) == 0 and game.status == 'released' %}
+                                                <span class="text-danger small mt-1">
+                                                    <i class="bi bi-exclamation-triangle"></i> Needs Officials
+                                                </span>
+                                                {% elif (game.assigned_officials_count or 0) > 0 %}
+                                                <a href="{{ url_for('game.assign_officials', game_id=game.id) }}" 
+                                                   class="btn btn-outline-info btn-sm mt-1">
+                                                    <i class="bi bi-eye"></i> View Assignments
+                                                </a>
+                                                {% endif %}
+                                            </div>
+                                        </td>
+                                        
+                                        <!-- Enhanced Actions Column -->
+                                        <td>
+                                            <div class="btn-group-enhanced d-flex gap-1">
+                                                <!-- Edit Button with Conditional Logic -->
+                                                <a href="{{ url_for('game.edit_game', game_id=game.id) }}" 
+                                                   class="btn btn-outline-primary btn-sm {{ 'disabled' if game.status == 'completed' else '' }}" 
+                                                   title="{{ 'Cannot edit completed games' if game.status == 'completed' else 'Edit game details' }}"
+                                                   {% if game.status == 'completed' %}aria-disabled="true" tabindex="-1"{% endif %}>
+                                                    <i class="bi bi-pencil"></i>
+                                                </a>
+                                                
+                                                <!-- Assignment Button -->
+                                                <a href="{{ url_for('game.assign_officials', game_id=game.id) }}" 
+                                                   class="btn btn-outline-success btn-sm" title="Manage official assignments">
+                                                    <i class="bi bi-people"></i>
+                                                </a>
+                                                
+                                                <!-- Enhanced Action Dropdown -->
+                                                <div class="dropdown">
+                                                    <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" 
+                                                            data-bs-toggle="dropdown" title="More actions">
+                                                        <i class="bi bi-three-dots"></i>
+                                                    </button>
+                                                    <ul class="dropdown-menu dropdown-menu-enhanced dropdown-menu-end">
+                                                        <!-- Status Management Section -->
+                                                        <li><h6 class="dropdown-header">Status Management</h6></li>
+                                                        
+                                                        {% if game.status == 'draft' %}
+                                                        <li>
+                                                            <form method="POST" action="{{ url_for('game.change_game_status', game_id=game.id) }}" class="d-inline w-100">
+                                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token else '' }}">
+                                                                <input type="hidden" name="status" value="ready">
+                                                                <button type="submit" class="dropdown-item-enhanced">
+                                                                    <i class="bi bi-check-circle text-warning"></i>Mark as Ready
+                                                                </button>
+                                                            </form>
+                                                        </li>
+                                                        {% elif game.status == 'ready' %}
+                                                        <li>
+                                                            <form method="POST" action="{{ url_for('game.change_game_status', game_id=game.id) }}" class="d-inline w-100">
+                                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token else '' }}">
+                                                                <input type="hidden" name="status" value="released">
+                                                                <button type="submit" class="dropdown-item-enhanced">
+                                                                    <i class="bi bi-send text-info"></i>Release to Officials
+                                                                </button>
+                                                            </form>
+                                                        </li>
+                                                        <li>
+                                                            <form method="POST" action="{{ url_for('game.change_game_status', game_id=game.id) }}" class="d-inline w-100">
+                                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token else '' }}">
+                                                                <input type="hidden" name="status" value="draft">
+                                                                <button type="submit" class="dropdown-item-enhanced">
+                                                                    <i class="bi bi-arrow-left text-secondary"></i>Back to Draft
+                                                                </button>
+                                                            </form>
+                                                        </li>
+                                                        {% elif game.status == 'released' %}
+                                                        <li>
+                                                            <form method="POST" action="{{ url_for('game.change_game_status', game_id=game.id) }}" class="d-inline w-100">
+                                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token else '' }}">
+                                                                <input type="hidden" name="status" value="completed">
+                                                                <button type="submit" class="dropdown-item-enhanced">
+                                                                    <i class="bi bi-check-square text-success"></i>Mark as Complete
+                                                                </button>
+                                                            </form>
+                                                        </li>
+                                                        {% endif %}
+                                                        
+                                                        <!-- Game Management Section -->
+                                                        <li><hr class="dropdown-divider"></li>
+                                                        <li><h6 class="dropdown-header">Game Management</h6></li>
+                                                        
+                                                        <!-- Clone Game -->
+                                                        <li>
+                                                            <a class="dropdown-item-enhanced" href="{{ url_for('game.clone_game', game_id=game.id) }}">
+                                                                <i class="bi bi-files text-primary"></i>Clone Game
+                                                            </a>
+                                                        </li>
+                                                        
+                                                        <!-- View Game Details -->
+                                                        <li>
+                                                            <a class="dropdown-item-enhanced" href="#" onclick="viewGameDetails({{ game.id }})">
+                                                                <i class="bi bi-eye text-info"></i>View Details
+                                                            </a>
+                                                        </li>
+                                                        
+                                                        <!-- Restore/Cancel Section -->
+                                                        {% if game.status == 'cancelled' %}
+                                                        <li><hr class="dropdown-divider"></li>
+                                                        <li>
+                                                            <form method="POST" action="{{ url_for('game.change_game_status', game_id=game.id) }}" class="d-inline w-100">
+                                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token else '' }}">
+                                                                <input type="hidden" name="status" value="draft">
+                                                                <button type="submit" class="dropdown-item-enhanced">
+                                                                    <i class="bi bi-arrow-clockwise text-success"></i>Restore Game
+                                                                </button>
+                                                            </form>
+                                                        </li>
+                                                        {% elif game.status in ['draft', 'ready', 'released'] %}
+                                                        <li><hr class="dropdown-divider"></li>
+                                                        <li>
+                                                            <form method="POST" action="{{ url_for('game.change_game_status', game_id=game.id) }}" class="d-inline w-100"
+                                                                  onsubmit="return confirmAction('Cancel this game? This action can be reversed later.')">
+                                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token else '' }}">
+                                                                <input type="hidden" name="status" value="cancelled">
+                                                                <button type="submit" class="dropdown-item-enhanced text-danger">
+                                                                    <i class="bi bi-x-circle"></i>Cancel Game
+                                                                </button>
+                                                            </form>
+                                                        </li>
+                                                        {% endif %}
+                                                        
+                                                        <!-- Danger Zone -->
+                                                        {% if game.status == 'draft' and (game.assigned_officials_count or 0) == 0 %}
+                                                        <li><hr class="dropdown-divider"></li>
+                                                        <li>
+                                                            <form method="POST" action="{{ url_for('game.delete_game', game_id=game.id) }}" class="d-inline w-100"
+                                                                  onsubmit="return confirmDelete('{{ game.home_team or 'Game' }}', '{{ game.away_team or 'TBD' }}', '{{ game.date.strftime('%m/%d/%Y') if game.date else 'No Date' }}')">
+                                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token else '' }}">
+                                                                <button type="submit" class="dropdown-item-enhanced text-danger">
+                                                                    <i class="bi bi-trash"></i>Delete Game
+                                                                </button>
+                                                            </form>
+                                                        </li>
+                                                        {% endif %}
+                                                    </ul>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </form>
+                </div>
+                
+                <!-- Enhanced Pagination -->
+                {% if games.pages > 1 %}
+                <div class="card-footer bg-light">
+                    <nav aria-label="Games pagination" class="d-flex justify-content-between align-items-center">
+                        <!-- Page Info -->
+                        <div class="text-muted">
+                            Showing {{ (games.page - 1) * games.per_page + 1 }} to 
+                            {{ games.page * games.per_page if games.page * games.per_page < games.total else games.total }} 
+                            of {{ games.total }} games
+                        </div>
+                        
+                        <!-- Pagination Links -->
+                        <ul class="pagination pagination-sm mb-0">
+                            {% if games.has_prev %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('game.manage_games', 
+                                    page=games.prev_num, 
+                                    search=search, 
+                                    league=league_filter, 
+                                    status=status_filter, 
+                                    date=date_filter,
+                                    time_period=time_period) }}" aria-label="Previous">
+                                    <i class="bi bi-chevron-left"></i>
+                                </a>
+                            </li>
+                            {% endif %}
+                            
+                            {% for page_num in games.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
+                                {% if page_num %}
+                                    {% if page_num != games.page %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="{{ url_for('game.manage_games', 
+                                            page=page_num, 
+                                            search=search, 
+                                            league=league_filter, 
+                                            status=status_filter, 
+                                            date=date_filter,
+                                            time_period=time_period) }}">{{ page_num }}</a>
+                                    </li>
+                                    {% else %}
+                                    <li class="page-item active" aria-current="page">
+                                        <span class="page-link">{{ page_num }}</span>
+                                    </li>
+                                    {% endif %}
+                                {% else %}
+                                <li class="page-item disabled">
+                                    <span class="page-link">...</span>
+                                </li>
+                                {% endif %}
+                            {% endfor %}
+                            
+                            {% if games.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('game.manage_games', 
+                                    page=games.next_num, 
+                                    search=search, 
+                                    league=league_filter, 
+                                    status=status_filter, 
+                                    date=date_filter,
+                                    time_period=time_period) }}" aria-label="Next">
+                                    <i class="bi bi-chevron-right"></i>
+                                </a>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                </div>
+                {% endif %}
+                
+                {% else %}
+                <!-- Enhanced No Games Found State -->
+                <div class="card-body text-center py-5">
+                    <div class="mb-4">
+                        <i class="bi bi-calendar-x display-1 text-muted opacity-50"></i>
+                    </div>
+                    <h4 class="text-muted mb-3">
+                        {% if time_period == 'future' %}No future games scheduled{% endif %}
+                        {% if time_period == 'today' %}No games scheduled for today{% endif %}
+                        {% if time_period == 'past' %}No past games found{% endif %}
+                        {% if time_period == 'all' %}No games found{% endif %}
+                    </h4>
+                    <p class="text-muted mb-4">
+                        {% if search or league_filter or status_filter or date_filter %}
+                            No games match your current filters. Try adjusting your search criteria or 
+                            <a href="{{ url_for('game.manage_games', time_period=time_period or 'future') }}" class="text-decoration-none">
+                                clear all filters
+                            </a>.
+                        {% else %}
+                            Get started by creating your first game. You can add games individually or import multiple games at once.
+                        {% endif %}
+                    </p>
+                    <div class="d-flex gap-2 justify-content-center">
+                        <a href="{{ url_for('game.add_game') }}" class="btn btn-primary">
+                            <i class="bi bi-plus-circle me-2"></i>Add First Game
+                        </a>
+                        {% if current_user.role in ['administrator', 'superadmin'] %}
+                        <a href="{{ url_for('bulk.game_templates') }}" class="btn btn-outline-secondary">
+                            <i class="bi bi-upload me-2"></i>Import Games
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Enhanced JavaScript with Error Handling and Bug Prevention -->
+<script>
+// Enhanced Game Management JavaScript with Better Error Handling
+(function() {
+    'use strict';
+    
+    // Global state management
+    const GameManager = {
+        selectedGames: new Set(),
+        isLoading: false,
+        
+        // Initialize the page
+        init: function() {
+            this.setupEventListeners();
+            this.updateSelectionCount();
+            this.initializeTooltips();
+            console.log('Game Manager initialized successfully');
+        },
+        
+        // Setup all event listeners
+        setupEventListeners: function() {
+            // Form auto-submit on filter change
+            const filterForm = document.getElementById('filterForm');
+            if (filterForm) {
+                const selects = filterForm.querySelectorAll('select');
+                selects.forEach(select => {
+                    select.addEventListener('change', this.debounce(() => {
+                        if (!this.isLoading) {
+                            filterForm.submit();
+                        }
+                    }, 500));
+                });
+            }
+            
+            // Search input with debounce
+            const searchInput = document.getElementById('search');
+            if (searchInput) {
+                searchInput.addEventListener('input', this.debounce(() => {
+                    if (searchInput.value.length >= 3 || searchInput.value.length === 0) {
+                        if (!this.isLoading) {
+                            filterForm.submit();
+                        }
+                    }
+                }, 800));
+            }
+        },
+        
+        // Initialize Bootstrap tooltips
+        initializeTooltips: function() {
+            if (typeof bootstrap !== 'undefined') {
+                const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+                tooltipTriggerList.map(function (tooltipTriggerEl) {
+                    return new bootstrap.Tooltip(tooltipTriggerEl);
+                });
+            }
+        },
+        
+        // Debounce utility function
+        debounce: function(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        },
+        
+        // Update selection count display
+        updateSelectionCount: function() {
+            const checkboxes = document.querySelectorAll('.game-checkbox:checked');
+            const count = checkboxes.length;
+            const countElement = document.getElementById('selectionCount');
+            
+            if (countElement) {
+                countElement.textContent = count === 0 ? '0 selected' : `${count} selected`;
+                countElement.className = `badge ${count > 0 ? 'bg-warning text-dark' : 'bg-info'} me-2 align-self-center`;
+            }
+            
+            // Update bulk actions visibility
+            const bulkActions = document.getElementById('bulkActions');
+            if (bulkActions) {
+                if (count > 0) {
+                    bulkActions.classList.add('show');
+                } else {
+                    bulkActions.classList.remove('show');
+                }
+            }
+            
+            // Update select all checkbox state
+            const selectAllCheckbox = document.getElementById('selectAll');
+            const allCheckboxes = document.querySelectorAll('.game-checkbox');
+            
+            if (selectAllCheckbox && allCheckboxes.length > 0) {
+                if (count === 0) {
+                    selectAllCheckbox.indeterminate = false;
+                    selectAllCheckbox.checked = false;
+                } else if (count === allCheckboxes.length) {
+                    selectAllCheckbox.indeterminate = false;
+                    selectAllCheckbox.checked = true;
+                } else {
+                    selectAllCheckbox.indeterminate = true;
+                    selectAllCheckbox.checked = false;
+                }
+            }
+        },
+        
+        // Show loading state
+        showLoading: function(element) {
+            if (element) {
+                element.classList.add('loading-state');
+                this.isLoading = true;
+            }
+        },
+        
+        // Hide loading state
+        hideLoading: function(element) {
+            if (element) {
+                element.classList.remove('loading-state');
+                this.isLoading = false;
+            }
+        },
+        
+        // Show notification
+        showNotification: function(message, type = 'info') {
+            const alertClass = type === 'error' ? 'alert-danger' : 
+                              type === 'success' ? 'alert-success' : 'alert-info';
+            
+            const alert = document.createElement('div');
+            alert.className = `alert ${alertClass} alert-dismissible fade show position-fixed`;
+            alert.style.cssText = 'top: 20px; right: 20px; z-index: 1050; min-width: 300px;';
+            alert.innerHTML = `
+                <i class="bi bi-${type === 'error' ? 'exclamation-triangle' : type === 'success' ? 'check-circle' : 'info-circle'} me-2"></i>
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            
+            document.body.appendChild(alert);
+            
+            // Auto-remove after 5 seconds
+            setTimeout(() => {
+                if (alert.parentNode) {
+                    alert.parentNode.removeChild(alert);
+                }
+            }, 5000);
+        }
+    };
+    
+    // Global functions for template usage
+    window.toggleBulkSelection = function(show) {
+        try {
+            const bulkElements = document.querySelectorAll('.bulk-select-header, .bulk-select-cell');
+            const gameCheckboxes = document.querySelectorAll('.game-checkbox');
+            const selectAllCheckbox = document.getElementById('selectAll');
+            
+            if (show) {
+                bulkElements.forEach(el => {
+                    el.style.display = 'table-cell';
+                    el.classList.add('fade-in');
+                });
+            } else {
+                bulkElements.forEach(el => el.style.display = 'none');
+                gameCheckboxes.forEach(cb => cb.checked = false);
+                if (selectAllCheckbox) selectAllCheckbox.checked = false;
+                GameManager.selectedGames.clear();
+            }
+            
+            GameManager.updateSelectionCount();
+        } catch (error) {
+            console.error('Error toggling bulk selection:', error);
+            GameManager.showNotification('Error enabling bulk selection', 'error');
+        }
+    };
+    
+    window.cancelBulkSelection = function() {
+        window.toggleBulkSelection(false);
+    };
+    
+    window.toggleSelectAll = function(selectAllCheckbox) {
+        try {
+            const gameCheckboxes = document.querySelectorAll('.game-checkbox');
+            gameCheckboxes.forEach(cb => {
+                cb.checked = selectAllCheckbox.checked;
+                if (selectAllCheckbox.checked) {
+                    GameManager.selectedGames.add(cb.value);
+                } else {
+                    GameManager.selectedGames.delete(cb.value);
+                }
+            });
+            GameManager.updateSelectionCount();
+        } catch (error) {
+            console.error('Error toggling select all:', error);
+        }
+    };
+    
+    window.updateSelectionCount = function() {
+        GameManager.updateSelectionCount();
+    };
+    
+    window.performBulkAction = function(action) {
+        try {
+            const selectedCheckboxes = document.querySelectorAll('.game-checkbox:checked');
+            if (selectedCheckboxes.length === 0) {
+                GameManager.showNotification('Please select at least one game', 'error');
+                return;
+            }
+            
+            const gameIds = Array.from(selectedCheckboxes).map(cb => cb.value);
+            let confirmMessage = '';
+            let actionUrl = '';
+            
+            switch(action) {
+                case 'link':
+                    confirmMessage = `Link ${gameIds.length} games together for batch operations?`;
+                    actionUrl = '{{ url_for("game.bulk_link_games") }}';
+                    break;
+                case 'release':
+                    confirmMessage = `Release ${gameIds.length} games to officials?`;
+                    actionUrl = '{{ url_for("game.bulk_status_change") }}';
+                    break;
+                case 'clone':
+                    confirmMessage = `Create copies of ${gameIds.length} selected games?`;
+                    actionUrl = '{{ url_for("game.bulk_clone_games") }}';
+                    break;
+                default:
+                    GameManager.showNotification('Unknown action selected', 'error');
+                    return;
+            }
+            
+            if (window.confirmAction(confirmMessage)) {
+                const form = document.getElementById('bulkActionForm');
+                if (form) {
+                    form.action = actionUrl;
+                    
+                    // Add action type if needed
+                    if (action === 'release') {
+                        const actionInput = document.createElement('input');
+                        actionInput.type = 'hidden';
+                        actionInput.name = 'action';
+                        actionInput.value = 'release';
+                        form.appendChild(actionInput);
+                    }
+                    
+                    GameManager.showLoading(form);
+                    form.submit();
+                }
+            }
+        } catch (error) {
+            console.error('Error performing bulk action:', error);
+            GameManager.showNotification('Error performing bulk action', 'error');
+        }
+    };
+    
+    window.confirmBulkDelete = function() {
+        try {
+            const selectedCheckboxes = document.querySelectorAll('.game-checkbox:checked');
+            if (selectedCheckboxes.length === 0) {
+                GameManager.showNotification('Please select at least one game to delete', 'error');
+                return;
+            }
+            
+            const message = `Are you sure you want to delete ${selectedCheckboxes.length} selected game(s)?\n\nGames with officials assigned will be cancelled instead of deleted.\n\nThis action cannot be undone for games that are permanently deleted.`;
+            
+            if (window.confirmAction(message)) {
+                const form = document.getElementById('bulkActionForm');
+                if (form) {
+                    form.action = '{{ url_for("game.bulk_delete_games") }}';
+                    GameManager.showLoading(form);
+                    form.submit();
+                }
+            }
+        } catch (error) {
+            console.error('Error confirming bulk delete:', error);
+            GameManager.showNotification('Error processing delete request', 'error');
+        }
+    };
+    
+    window.confirmDelete = function(homeTeam, awayTeam, gameDate) {
+        const gameTitle = homeTeam && awayTeam ? `${homeTeam} vs ${awayTeam}` : 'this game';
+        return window.confirmAction(`Are you sure you want to delete ${gameTitle} scheduled for ${gameDate}?\n\nThis action cannot be undone.`);
+    };
+    
+    window.confirmAction = function(message) {
+        return confirm(message);
+    };
+    
+    window.refreshTable = function() {
+        try {
+            GameManager.showLoading(document.querySelector('.card'));
+            window.location.reload();
+        } catch (error) {
+            console.error('Error refreshing table:', error);
+            GameManager.hideLoading(document.querySelector('.card'));
+        }
+    };
+    
+    window.refreshData = function() {
+        window.refreshTable();
+    };
+    
+    window.exportGames = function() {
+        try {
+            const currentUrl = new URL(window.location);
+            currentUrl.pathname = '{{ url_for("game.export_games") }}';
+            window.open(currentUrl.toString(), '_blank');
+        } catch (error) {
+            console.error('Error exporting games:', error);
+            GameManager.showNotification('Error exporting games', 'error');
+        }
+    };
+    
+    window.showQuickStats = function() {
+        GameManager.showNotification('Quick statistics feature coming soon!', 'info');
+    };
+    
+    window.viewGameDetails = function(gameId) {
+        try {
+            const url = '/game/' + gameId + '/view';
+            window.open(url, '_blank');
+        } catch (error) {
+            console.error('Error viewing game details:', error);
+            GameManager.showNotification('Error opening game details', 'error');
+        }
+    };
+    
+    // Initialize when DOM is ready
+    document.addEventListener('DOMContentLoaded', function() {
+        try {
+            GameManager.init();
+        } catch (error) {
+            console.error('Error initializing Game Manager:', error);
+        }
+    });
+    
+    // Handle page unload
+    window.addEventListener('beforeunload', function() {
+        if (GameManager.isLoading) {
+            return 'A request is currently in progress. Are you sure you want to leave this page?';
+        }
+    });
+    
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,358 @@
+{% extends "base.html" %}
+
+{% block title %}Reports Dashboard - Sports Scheduler{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1><i class="bi bi-graph-up me-2"></i>Reports Dashboard</h1>
+            <div class="btn-group">
+                <a href="{{ url_for('report.financial_reports') }}" class="btn btn-outline-primary">
+                    <i class="bi bi-currency-dollar me-1"></i>Financial Reports
+                </a>
+                <a href="{{ url_for('report.game_reports') }}" class="btn btn-outline-success">
+                    <i class="bi bi-calendar-event me-1"></i>Game Reports
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if current_user.role == 'official' %}
+<!-- Official Dashboard -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="bi bi-currency-dollar me-2"></i>My Earnings (Last 30 Days)</h5>
+            </div>
+            <div class="card-body">
+                {% if earnings_data %}
+                <div class="row text-center">
+                    <div class="col-6">
+                        <h3 class="text-success">${{ "%.2f"|format(earnings_data.total_earnings) }}</h3>
+                        <p class="text-muted">Total Earnings</p>
+                    </div>
+                    <div class="col-6">
+                        <h3 class="text-info">{{ earnings_data.games_count }}</h3>
+                        <p class="text-muted">Games Worked</p>
+                    </div>
+                </div>
+                <div class="text-center mt-3">
+                    <a href="{{ url_for('report.financial_reports') }}" class="btn btn-outline-primary btn-sm">
+                        <i class="bi bi-eye me-1"></i>View Details
+                    </a>
+                    <a href="{{ url_for('report.export_earnings') }}" class="btn btn-outline-success btn-sm">
+                        <i class="bi bi-download me-1"></i>Export CSV
+                    </a>
+                </div>
+                {% else %}
+                <div class="text-center py-3">
+                    <i class="bi bi-currency-dollar display-4 text-muted"></i>
+                    <p class="text-muted">No completed games in the last 30 days.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0"><i class="bi bi-calendar-check me-2"></i>Recent Games</h5>
+            </div>
+            <div class="card-body">
+                {% if recent_games %}
+                <div class="list-group list-group-flush">
+                    {% for game in recent_games[:5] %}
+                    <div class="list-group-item border-0 px-0 py-2">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h6 class="mb-1">{{ game.game_title }}</h6>
+                                <small class="text-muted">{{ game.league }}</small>
+                            </div>
+                            <div class="text-end">
+                                <small class="text-info">{{ game.date.strftime('%m/%d') }}</small>
+                                <br><span class="badge bg-{{ 'success' if game.game_status == 'completed' else 'info' if game.assignment_status == 'accepted' else 'warning' }}">
+                                    {{ game.assignment_status.title() }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                <div class="text-center mt-3">
+                    <a href="{{ url_for('report.game_reports') }}" class="btn btn-outline-success btn-sm">
+                        <i class="bi bi-eye me-1"></i>View All Games
+                    </a>
+                </div>
+                {% else %}
+                <div class="text-center py-3">
+                    <i class="bi bi-calendar-x display-4 text-muted"></i>
+                    <p class="text-muted">No recent game assignments.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{% elif current_user.role in ['administrator', 'superadmin'] %}
+<!-- Admin Dashboard -->
+{% if current_user.is_superadmin and global_financials %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-danger text-white">
+                <h5 class="mb-0"><i class="bi bi-globe me-2"></i>Global Financial Summary (Last 30 Days)</h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-md-3">
+                        <h4 class="text-success">${{ "%.2f"|format(global_financials.total_revenue) }}</h4>
+                        <p class="text-muted">Total Revenue</p>
+                    </div>
+                    <div class="col-md-3">
+                        <h4 class="text-warning">${{ "%.2f"|format(global_financials.total_costs) }}</h4>
+                        <p class="text-muted">Total Costs</p>
+                    </div>
+                    <div class="col-md-3">
+                        <h4 class="text-{{ 'success' if global_financials.total_profit >= 0 else 'danger' }}">
+                            ${{ "%.2f"|format(global_financials.total_profit) }}
+                        </h4>
+                        <p class="text-muted">Net Profit</p>
+                    </div>
+                    <div class="col-md-3">
+                        <h4 class="text-info">{{ global_financials.league_summaries|length }}</h4>
+                        <p class="text-muted">Active Leagues</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<div class="row">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="bi bi-trophy me-2"></i>League Performance Overview</h5>
+            </div>
+            <div class="card-body">
+                {% if league_stats %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>League</th>
+                                <th>Games</th>
+                                <th>Officials</th>
+                                <th>Revenue</th>
+                                <th>Costs</th>
+                                <th>Profit</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in league_stats %}
+                            {% set league = item.league %}
+                            {% set stats = item.stats %}
+                            {% set financials = item.financials %}
+                            <tr>
+                                <td>
+                                    <strong>{{ league.full_name }}</strong>
+                                    {% if league.description %}
+                                    <br><small class="text-muted">{{ league.description[:40] }}...</small>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="badge bg-info">{{ financials.games_count }}</span>
+                                    {% if stats.status_counts %}
+                                    <br><small class="text-muted">
+                                        {% for status, count in stats.status_counts.items() %}
+                                        {{ status.title() }}: {{ count }}{% if not loop.last %}, {% endif %}
+                                        {% endfor %}
+                                    </small>
+                                    {% endif %}
+                                </td>
+                                <td>{{ stats.unique_officials or 0 }}</td>
+                                <td class="text-success">${{ "%.2f"|format(financials.total_billing) }}</td>
+                                <td class="text-warning">${{ "%.2f"|format(financials.total_fees_paid) }}</td>
+                                <td class="text-{{ 'success' if financials.profit_margin >= 0 else 'danger' }}">
+                                    ${{ "%.2f"|format(financials.profit_margin) }}
+                                </td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <a href="{{ url_for('report.financial_reports', league_id=league.id) }}" 
+                                           class="btn btn-outline-primary" title="Financial Report">
+                                            <i class="bi bi-currency-dollar"></i>
+                                        </a>
+                                        <a href="{{ url_for('report.game_reports', league_id=league.id) }}" 
+                                           class="btn btn-outline-success" title="Game Report">
+                                            <i class="bi bi-calendar-event"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="bi bi-trophy display-1 text-muted"></i>
+                    <h4 class="mt-3">No League Data</h4>
+                    <p class="text-muted">No leagues with financial activity in the last 30 days.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{% elif current_user.role == 'assigner' %}
+<!-- Assigner Dashboard -->
+<div class="row">
+    <div class="col-md-6">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0"><i class="bi bi-person-badge me-2"></i>My Earnings</h5>
+            </div>
+            <div class="card-body">
+                {% if earnings_data %}
+                <div class="row text-center">
+                    <div class="col-6">
+                        <h3 class="text-success">${{ "%.2f"|format(earnings_data.total_earnings) }}</h3>
+                        <p class="text-muted">Total Earnings</p>
+                    </div>
+                    <div class="col-6">
+                        <h3 class="text-info">{{ earnings_data.games_count }}</h3>
+                        <p class="text-muted">Games Worked</p>
+                    </div>
+                </div>
+                {% else %}
+                <div class="text-center py-3">
+                    <i class="bi bi-currency-dollar display-4 text-muted"></i>
+                    <p class="text-muted">No completed games in the last 30 days.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-warning text-white">
+                <h5 class="mb-0"><i class="bi bi-calendar-plus me-2"></i>Quick Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('game.add_game') }}" class="btn btn-outline-primary">
+                        <i class="bi bi-plus-circle me-2"></i>Schedule New Game
+                    </a>
+                    <a href="{{ url_for('game.manage_games', status='draft') }}" class="btn btn-outline-secondary">
+                        <i class="bi bi-pencil-square me-2"></i>Manage Draft Games
+                    </a>
+                    <a href="{{ url_for('report.game_reports') }}" class="btn btn-outline-info">
+                        <i class="bi bi-graph-up me-2"></i>View Game Reports
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% elif current_user.role == 'viewer' %}
+<!-- Viewer Dashboard -->
+<div class="row">
+    <div class="col-12">
+        <div class="alert alert-info">
+            <h5><i class="bi bi-info-circle me-2"></i>Reports Access</h5>
+            <p class="mb-2">As a viewer, you have read-only access to reports and data. You can view financial summaries, game statistics, and export data for analysis.</p>
+            <div class="btn-group">
+                <a href="{{ url_for('report.financial_reports') }}" class="btn btn-outline-primary btn-sm">
+                    <i class="bi bi-currency-dollar me-1"></i>Financial Reports
+                </a>
+                <a href="{{ url_for('report.game_reports') }}" class="btn btn-outline-success btn-sm">
+                    <i class="bi bi-calendar-event me-1"></i>Game Reports
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Quick Actions for All Users -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-secondary text-white">
+                <h5 class="mb-0"><i class="bi bi-lightning-fill me-2"></i>Quick Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <div class="d-grid">
+                            <a href="{{ url_for('report.financial_reports') }}" class="btn btn-outline-primary">
+                                <i class="bi bi-currency-dollar me-2"></i>Financial Reports
+                            </a>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="d-grid">
+                            <a href="{{ url_for('report.game_reports') }}" class="btn btn-outline-success">
+                                <i class="bi bi-calendar-event me-2"></i>Game Reports
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <!-- Add these to your existing Quick Actions -->
+                    {% if current_user.role in ['administrator', 'superadmin'] %}
+                    <div class="col-md-3 mb-3">
+                        <div class="d-grid">
+                            <a href="{{ url_for('report.invoices') }}" class="btn btn-outline-primary">
+                                <i class="bi bi-file-earmark-text me-2"></i>Invoices
+                            </a>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="d-grid">
+                            <a href="{{ url_for('report.paysheets') }}" class="btn btn-outline-success">
+                                <i class="bi bi-file-earmark-dollar me-2"></i>Paysheets
+                            </a>
+                        </div>
+                    </div>
+                    {% elif current_user.role == 'official' %}
+                    <div class="col-md-3 mb-3">
+                        <div class="d-grid">
+                            <a href="{{ url_for('report.paysheets') }}" class="btn btn-outline-success">
+                                <i class="bi bi-file-earmark-dollar me-2"></i>My Paysheets
+                            </a>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if current_user.role == 'official' %}
+                    <div class="col-md-3 mb-3">
+                        <div class="d-grid">
+                            <a href="{{ url_for('report.export_earnings') }}" class="btn btn-outline-info">
+                                <i class="bi bi-download me-2"></i>Export Earnings
+                            </a>
+                        </div>
+                    </div>
+                    {% endif %}
+                    <div class="col-md-3 mb-3">
+                        <div class="d-grid">
+                            <a href="{{ url_for('index') }}" class="btn btn-outline-dark">
+                                <i class="bi bi-house me-2"></i>Main Dashboard
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

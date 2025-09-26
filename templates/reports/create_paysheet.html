@@ -1,0 +1,71 @@
+﻿<!-- templates/reports/create_paysheet.html -->
+{% extends "base.html" %}
+
+{% block title %}Create Paysheet - Reports{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h4><i class="fas fa-plus-circle"></i> Create New Paysheet</h4>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        <div class="form-group mb-3">
+                            <label for="official_id" class="form-label">Official <span class="text-danger">*</span></label>
+                            <select class="form-control" id="official_id" name="official_id" required>
+                                <option value="">Choose an official...</option>
+                                {% for official in officials %}
+                                <option value="{{ official.id }}">{{ official.first_name }} {{ official.last_name }} ({{ official.email }})</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label for="start_date" class="form-label">Start Date <span class="text-danger">*</span></label>
+                                    <input type="date" class="form-control" id="start_date" name="start_date" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label for="end_date" class="form-label">End Date <span class="text-danger">*</span></label>
+                                    <input type="date" class="form-control" id="end_date" name="end_date" required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="alert alert-info">
+                            <strong>Note:</strong> This will create a paysheet with demo data. 
+                            When game management is fully integrated, real game data will be used.
+                        </div>
+
+                        <div class="form-group">
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-save"></i> Create Paysheet
+                            </button>
+                            <a href="{{ url_for('report.paysheets') }}" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Set default dates
+document.addEventListener('DOMContentLoaded', function() {
+    const today = new Date();
+    const thirtyDaysAgo = new Date(today.getTime() - (30 * 24 * 60 * 60 * 1000));
+    
+    document.getElementById('end_date').value = today.toISOString().split('T')[0];
+    document.getElementById('start_date').value = thirtyDaysAgo.toISOString().split('T')[0];
+});
+</script>
+{% endblock %}

@@ -1,0 +1,141 @@
+<!-- templates/bulk/dashboard.html -->
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="bi bi-upload me-2"></i>Bulk Operations Dashboard</h2>
+                <div class="d-flex gap-2">
+                    <a href="{{ url_for('bulk.help_page') }}" class="btn btn-outline-info">
+                        <i class="bi bi-question-circle me-1"></i>Help
+                    </a>
+                </div>
+            </div>
+
+            <!-- Quick Stats -->
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="card bg-primary text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h5>Games Import</h5>
+                                    <p class="mb-0">Upload game schedules</p>
+                                </div>
+                                <i class="bi bi-calendar-event fa-2x"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-success text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h5>With Assignments</h5>
+                                    <p class="mb-0">Schedule & assign officials</p>
+                                </div>
+                                <i class="bi bi-people-fill fa-2x"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-info text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h5>Export Data</h5>
+                                    <p class="mb-0">Download existing games</p>
+                                </div>
+                                <i class="bi bi-download fa-2x"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-warning text-dark">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h5>Templates</h5>
+                                    <p class="mb-0">Download Excel templates</p>
+                                </div>
+                                <i class="bi bi-file-earmark-excel fa-2x"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Actions -->
+            <div class="row">
+                <div class="col-lg-6">
+                    <div class="card">
+                        <div class="card-header bg-primary text-white">
+                            <h5><i class="bi bi-download me-2"></i>Download Templates</h5>
+                        </div>
+                        <div class="card-body">
+                            <p>Get customized Excel templates with your leagues, locations, and officials in dropdown menus.</p>
+                            <div class="d-grid gap-2">
+                                <a href="{{ url_for('bulk.game_templates') }}" class="btn btn-primary">
+                                    <i class="bi bi-file-earmark-excel me-2"></i>Game Templates
+                                </a>
+                                <small class="text-muted">Choose from games-only or games-with-assignments templates</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-6">
+                    <div class="card">
+                        <div class="card-header bg-success text-white">
+                            <h5><i class="bi bi-upload me-2"></i>Upload Games</h5>
+                        </div>
+                        <div class="card-body">
+                            <p>Upload completed Excel templates to import games and assignments into the system.</p>
+                            <div class="d-grid gap-2">
+                                <a href="{{ url_for('bulk.upload_games') }}" class="btn btn-success">
+                                    <i class="bi bi-upload me-2"></i>Upload Games File
+                                </a>
+                                <small class="text-muted">Supports .xlsx and .xls files up to 16MB</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Activity -->
+            <div class="row mt-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5><i class="bi bi-activity me-2"></i>Quick Access</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <h6>Before Importing Games:</h6>
+                                    <ul class="list-unstyled">
+                                        <li><i class="bi bi-question-circle text-info me-1"></i>
+                                            <a href="{{ url_for('bulk.help_page') }}">Bulk operations guide</a>
+                                        </li>
+                                        <li><i class="bi bi-file-text text-secondary me-1"></i>
+                                            Template format reference
+                                        </li>
+                                        <li><i class="bi bi-bug text-danger me-1"></i>
+                                            Troubleshooting tips
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

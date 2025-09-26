@@ -1,0 +1,79 @@
+﻿<!-- templates/reports/invoices.html -->
+{% extends "base.html" %}
+
+{% block title %}Invoices - Reports{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="fas fa-file-invoice"></i> Invoice Management</h2>
+        <div>
+            <a href="{{ url_for('report.create_invoice') }}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Create Invoice
+            </a>
+            <a href="{{ url_for('report.dashboard') }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back to Reports
+            </a>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">All Invoices</h5>
+        </div>
+        <div class="card-body">
+            {% if invoices %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Invoice #</th>
+                            <th>Billing Recipient</th>
+                            <th>Invoice Date</th>
+                            <th>Due Date</th>
+                            <th class="text-right">Total</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for invoice in invoices %}
+                        <tr class="{% if invoice.is_overdue %}table-warning{% endif %}">
+                            <td>
+                                <strong>{{ invoice.invoice_number }}</strong>
+                                {% if invoice.is_overdue %}
+                                <br><small class="text-danger">OVERDUE</small>
+                                {% endif %}
+                            </td>
+                            <td>{{ invoice.billing_recipient }}</td>
+                            <td>{{ invoice.invoice_date.strftime('%m/%d/%Y') }}</td>
+                            <td>{{ invoice.due_date.strftime('%m/%d/%Y') }}</td>
+                            <td class="text-right">${{ "%.2f"|format(invoice.total_amount) }}</td>
+                            <td>
+                                <span class="badge badge-{% if invoice.status == 'paid' %}success{% elif invoice.status == 'sent' %}info{% else %}secondary{% endif %}">
+                                    {{ invoice.status.title() }}
+                                </span>
+                            </td>
+                            <td>
+                                <a href="{{ url_for('report.view_invoice', invoice_id=invoice.id) }}" 
+                                   class="btn btn-sm btn-outline-primary">View</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-4">
+                <i class="fas fa-file-invoice fa-3x text-muted mb-3"></i>
+                <h5 class="text-muted">No Invoices Found</h5>
+                <p class="text-muted">Create your first invoice to get started.</p>
+                <a href="{{ url_for('report.create_invoice') }}" class="btn btn-primary">
+                    Create First Invoice
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
