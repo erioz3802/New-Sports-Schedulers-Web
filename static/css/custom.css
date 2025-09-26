@@ -1,0 +1,81 @@
+/* Custom styles for Sports Scheduler */
+
+/* Enhanced navigation */
+.navbar-brand {
+    font-weight: bold;
+}
+
+/* Form enhancements */
+.form-floating {
+    margin-bottom: 1rem;
+}
+
+/* Card styling */
+.card-header {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+}
+
+/* Button group spacing */
+.btn-group .btn {
+    margin-right: 0.5rem;
+}
+
+/* Table responsive improvements */
+.table-responsive {
+    border-radius: 0.375rem;
+}
+
+/* Dashboard cards */
+.dashboard-card {
+    transition: transform 0.2s;
+}
+
+.dashboard-card:hover {
+    transform: translateY(-2px);
+}
+
+/* Status badges */
+.badge {
+    font-size: 0.75em;
+}
+
+/* Form validation */
+.is-invalid {
+    border-color: #dc3545;
+}
+
+.is-valid {
+    border-color: #198754;
+}
+
+/* Loading states */
+.btn.loading {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .btn-group {
+        flex-direction: column;
+    }
+    
+    .btn-group .btn {
+        margin-bottom: 0.5rem;
+        margin-right: 0;
+    }
+}
+
+/* Assignment status colors */
+.status-pending { color: #ffc107; }
+.status-accepted { color: #198754; }
+.status-declined { color: #dc3545; }
+.status-draft { color: #6c757d; }
+
+/* Game ranking indicators */
+.ranking-1 { color: #6c757d; }
+.ranking-2 { color: #0dcaf0; }
+.ranking-3 { color: #0d6efd; }
+.ranking-4 { color: #fd7e14; }
+.ranking-5 { color: #dc3545; font-weight: bold; }
